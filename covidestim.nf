@@ -1,11 +1,23 @@
 #!/usr/bin/env nextflow
 
+// The name of the grouping variable.
+// "state": state-level runs
+// "fips": county-level runs
 params.key = "state"
 
+// The directory in which to store the principal output, `summary.csv`
+params.outdir = "results"
+
+// Download `covidestim/covidestim-sources` and use its makefile to generate
+// today's copy of either county-level or state-level data. Stage this data
+// for splitting by `splitTractData`
 process makeTractData {
 
-    output:
-        file 'data.csv' into allTractData
+    // Retry once in case of HTTP errors, before giving up
+    errorStrategy 'retry'
+    maxRetries 1
+
+    output: file 'data.csv' into allTractData
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
@@ -20,19 +32,18 @@ process makeTractData {
 }
 
 // Receive input data, either for states or counties, and split it by the 
-// type of geographic tract under consideration. Send each resulting `.csv`
-// onto a channel, to be sent to the `runTract` process.
+// geographic tract under consideration. Send each resulting `.csv` onto a
+// channel, to be delivered to the `runTract` process.
 process splitTractData {
 
     // This defines which container to use for BOTH Singularity and Docker
     container 'rocker/tidyverse'
 
-    input:
-        file x from allTractData
-    output:
-        // 'mode flatten' means that each `.csv` file is sent as its own item
-        // onto the channel. This feature is deprecated.
-        file '*.csv' into tractData mode flatten
+    input: file x from allTractData
+
+    // 'mode flatten' means that each `.csv` file is sent as its own item
+    // onto the channel. NOTE: This feature is deprecated.
+    output: file '*.csv' into tractData mode flatten
 
     """
     #!/usr/local/bin/Rscript
@@ -48,17 +59,23 @@ process runTract {
     container 'covidestim/covidestim'
     time '4.5h'
     cpus 3
+    memory '1.5 GB'
+    clusterOptions '-A covid -p covid'
 
     // Retry once, before giving up
     errorStrategy 'retry'
     maxRetries 1
 
-    tag "$f"
+    // Files from `tractData` are ALWAYS named by the tract they represent,
+    // i.e. state name or FIPS code. We can get the name of the tract by
+    // asking for the "simple name" of the file.
+    tag "${f.getSimpleName()}"
 
     input:
         file f from tractData
     output:
-        tuple val(${f.getSimpleName}), \
+        // output is [tract name, summary file for that run, warnings from rstan]
+        tuple val("${f.getSimpleName()}"), \
               file('summary.csv'), \
               file('warnings.csv') into results
 
@@ -83,13 +100,38 @@ process runTract {
       input_fracpos(d_fracpos)
     
     result <- runner(cfg, cores = 3)
-
+ 
     run_summary <- summary(result$result)
     warnings    <- result$warnings
-
+ 
     write_csv(tibble(warnings=result$warnings), 'warnings.csv')
     write_csv(run_summary, 'summary.csv')
+#   write_csv(tibble(warnings="lol"), 'warnings.csv')
+#   write_csv(tibble(deaths=0), 'summary.csv')
     '''
 }
 
-result.view()
+process summarize {
+    container 'rocker/tidyverse'
+
+    publishDir "$params.outdir"
+
+    input:
+        stdin results.reduce("id,summary,warnings"){
+            a, b -> "${a}\n" + "${b[0]},${b[1]},${b[2]}\n"
+        }
+    output:
+        file 'summary.RDS'
+
+    script:
+    """
+    #!/usr/local/bin/Rscript
+    library(tidyverse)
+
+    d <- read_csv(file('stdin')) %>%
+       mutate_at(c('summary', 'warnings'), ~map(., read_csv))
+
+    saveRDS(d, 'summary.RDS')
+    """
+}
+
