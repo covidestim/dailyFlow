@@ -13,6 +13,8 @@ params.outdir = "results"
 // for splitting by `splitTractData`
 process makeTractData {
 
+    container 'rocker/tidyverse'
+
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
     maxRetries 1
@@ -62,7 +64,6 @@ process runTract {
     time '4.5h'
     cpus 3
     memory '1.5 GB'
-    clusterOptions '-A covid -p covid'
 
     // Retry once, before giving up
     errorStrategy 'retry'
