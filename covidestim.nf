@@ -16,6 +16,7 @@ process makeTractData {
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
     maxRetries 1
+    time '5m'
 
     output: file 'data.csv' into allTractData
 
@@ -38,6 +39,7 @@ process splitTractData {
 
     // This defines which container to use for BOTH Singularity and Docker
     container 'rocker/tidyverse'
+    time '3m'
 
     input: file x from allTractData
 
@@ -113,6 +115,7 @@ process runTract {
 
 process summarize {
     container 'rocker/tidyverse'
+    time '10m'
 
     publishDir "$params.outdir"
 
