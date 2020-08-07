@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-#SBATCH --time=480
+#SBATCH --time=660
 #SBATCH --mail-user=marcus.russi@yale.edu
 #SBATCH --mail-type=ALL
 
