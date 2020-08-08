@@ -66,7 +66,7 @@ process runTract {
     memory '1.5 GB'
 
     // Retry once, before giving up
-    errorStrategy 'retry'
+    errorStrategy { task.attempt == 1 ? 'retry' : 'ignore' }
     maxRetries 1
 
     // Files from `tractData` are ALWAYS named by the tract they represent,
