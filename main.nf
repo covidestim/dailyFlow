@@ -61,7 +61,7 @@ process splitTractData {
 process runTract {
 
     container 'covidestim/covidestim'
-    time '4.5h'
+    time '4.75h'
     cpus 3
     memory '1.5 GB'
 
