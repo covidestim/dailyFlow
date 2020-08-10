@@ -61,7 +61,7 @@ process splitTractData {
 process runTract {
 
     container 'covidestim/covidestim'
-    time '4.75h'
+    time '10h'
     cpus 3
     memory '1.5 GB'
 
@@ -116,7 +116,7 @@ process runTract {
 
 process summarize {
     container 'rocker/tidyverse'
-    time '10m'
+    time '20m'
 
     publishDir "$params.outdir"
 
