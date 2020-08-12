@@ -60,7 +60,7 @@ process splitTractData {
 
 process runTract {
 
-    container 'covidestim/covidestim'
+    container 'covidestim/covidestim:latest'
     time '10h'
     cpus 3
     memory '1.5 GB'
@@ -77,10 +77,9 @@ process runTract {
     input:
         file f from tractData
     output:
-        // output is [tract name, summary file for that run, warnings from rstan]
-        tuple val("${f.getSimpleName()}"), \
-              file('summary.csv'), \
-              file('warnings.csv') into results
+        // output is [summary file for that run, warnings from rstan]
+        file('summary.csv') into summaries
+        file('warnings.csv') into warnings
 
     shell:
     '''
@@ -92,9 +91,9 @@ process runTract {
 
     d <- read_csv("!{f}")
 
-    d_cases   <- transmute(d, date, observation = cases)
-    d_deaths  <- transmute(d, date, observation = deaths)
-    d_fracpos <- transmute(d, date, observation = fracpos)
+    d_cases   <- select(d, date, observation = cases)
+    d_deaths  <- select(d, date, observation = deaths)
+    d_fracpos <- select(d, date, observation = fracpos)
 
     cfg <- covidestim(ndays = nrow(d),
                       seed  = sample.int(.Machine$integer.max, 1)) +
@@ -102,40 +101,32 @@ process runTract {
       input_deaths(d_deaths) +
       input_fracpos(d_fracpos)
     
-    result <- runner(cfg, cores = 3)
+    result <- runner(cfg, cores = !{task.cpus})
  
     run_summary <- summary(result$result)
     warnings    <- result$warnings
- 
-    write_csv(tibble(warnings=result$warnings), 'warnings.csv')
-    write_csv(run_summary, 'summary.csv')
-#   write_csv(tibble(warnings="lol"), 'warnings.csv')
-#   write_csv(tibble(deaths=0), 'summary.csv')
+
+    write_csv(
+      bind_cols(!{params.key} = "!{task.tag}", run_summary),
+      'summary.csv'
+    )
+
+    write_csv(
+      tibble(!{params.key} = "!{task.tag}", warnings = warnings),
+      'warnings.csv'
+    )
     '''
 }
 
-process summarize {
-    container 'rocker/tidyverse'
-    time '20m'
+summaries
+    .collectFile(name: 'summary.csv',
+                 storeDir: params.outdir,
+                 keepHeader: true,
+                 skip: 1)
 
-    publishDir "$params.outdir"
-
-    input:
-        stdin results.reduce("id,summary,warnings"){
-            a, b -> "${a}\n" + "${b[0]},${b[1]},${b[2]}\n"
-        }
-    output:
-        file 'summary.RDS'
-
-    script:
-    """
-    #!/usr/local/bin/Rscript
-    library(tidyverse)
-
-    d <- read_csv(file('stdin')) %>%
-       mutate_at(c('summary', 'warnings'), ~map(., read_csv))
-
-    saveRDS(d, 'summary.RDS')
-    """
-}
+warnings
+    .collectFile(name: 'warnings.csv',
+                 storeDir: params.outdir,
+                 keepHeader: true,
+                 skip: 1)
 
