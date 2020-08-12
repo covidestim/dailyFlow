@@ -60,8 +60,8 @@ process splitTractData {
 
 process runTract {
 
-    container 'covidestim/covidestim:latest'
-    time '10h'
+    container 'covidestim/covidestim:countymodel'
+    time '2h'
     cpus 3
     memory '1.5 GB'
 
@@ -93,15 +93,14 @@ process runTract {
 
     d_cases   <- select(d, date, observation = cases)
     d_deaths  <- select(d, date, observation = deaths)
-    d_fracpos <- select(d, date, observation = fracpos)
 
     cfg <- covidestim(ndays = nrow(d),
                       seed  = sample.int(.Machine$integer.max, 1)) +
       input_cases(d_cases) +
-      input_deaths(d_deaths) +
-      input_fracpos(d_fracpos)
+      input_deaths(d_deaths)
     
-    result <- runner(cfg, cores = !{task.cpus})
+    result <- runner(cfg, cores = !{task.cpus},
+                     open_progress = TRUE)
  
     run_summary <- summary(result$result)
     warnings    <- result$warnings
