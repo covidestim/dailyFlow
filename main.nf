@@ -41,7 +41,7 @@ process splitTractData {
 
     // This defines which container to use for BOTH Singularity and Docker
     container 'rocker/tidyverse'
-    time '3m'
+    time '15m'
 
     input: file x from allTractData
 
@@ -54,6 +54,7 @@ process splitTractData {
     library(tidyverse)
 
     d <- read_csv("$x") %>% group_by($params.key) %>%
+      arrange(date) %>%
       group_walk(~write_csv(.x, paste0(.y, ".csv")))
     """
 }
