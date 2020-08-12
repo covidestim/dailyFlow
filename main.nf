@@ -3,7 +3,7 @@
 // The name of the grouping variable.
 // "state": state-level runs
 // "fips": county-level runs
-params.key = "state"
+params.key = "fips"
 
 // The directory in which to store the principal output, `summary.csv`
 params.outdir = "results"
@@ -29,8 +29,8 @@ process makeTractData {
     cd covidestim-sources && \
     git submodule init && \
     git submodule update && \
-    make -B data-products/covidtracking-smoothed.csv && \
-    mv data-products/covidtracking-smoothed.csv ../data.csv
+    make -B data-products/nytimes-counties.csv && \
+    mv data-products/nytimes-counties.csv ../data.csv
     """
 }
 
@@ -61,7 +61,7 @@ process splitTractData {
 process runTract {
 
     container 'covidestim/covidestim:countymodel'
-    time '2h'
+    time '30m'
     cpus 3
     memory '1.5 GB'
 
@@ -75,7 +75,7 @@ process runTract {
     tag "${f.getSimpleName()}"
 
     input:
-        file f from tractData
+        file f from tractData.take(1000)
     output:
         // output is [summary file for that run, warnings from rstan]
         file('summary.csv') into summaries
