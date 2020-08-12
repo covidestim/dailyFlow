@@ -41,7 +41,7 @@ process splitTractData {
 
     // This defines which container to use for BOTH Singularity and Docker
     container 'rocker/tidyverse'
-    time '15m'
+    time '50m'
 
     input: file x from allTractData
 
