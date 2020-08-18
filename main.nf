@@ -5,9 +5,6 @@
 // "fips": county-level runs
 params.key = "fips"
 
-// The directory in which to store the principal output, `summary.csv`
-params.outdir = "results"
-
 // Download `covidestim/covidestim-sources` and use its makefile to generate
 // today's copy of either county-level or state-level data. Stage this data
 // for splitting by `splitTractData`
@@ -28,9 +25,9 @@ process makeTractData {
     git clone https://github.com/covidestim/covidestim-sources && \
     cd covidestim-sources && \
     git submodule init && \
-    git submodule update && \
-    make -B data-products/nytimes-counties.csv && \
-    mv data-products/nytimes-counties.csv ../data.csv
+    git submodule update --remote data-sources/jhu-data && \
+    make -B data-products/jhu-counties.csv && \
+    mv data-products/jhu-counties.csv ../data.csv
     """
 }
 
@@ -41,7 +38,7 @@ process splitTractData {
 
     // This defines which container to use for BOTH Singularity and Docker
     container 'rocker/tidyverse'
-    time '50m'
+    time '1h'
 
     input: file x from allTractData
 
@@ -53,8 +50,7 @@ process splitTractData {
     #!/usr/local/bin/Rscript
     library(tidyverse)
 
-    d <- read_csv("$x") %>% group_by($params.key) %>%
-      arrange(date) %>%
+    d <- read_csv("$x") %>% group_by($params.key) %>% arrange(date) %>%
       group_walk(~write_csv(.x, paste0(.y, ".csv")))
     """
 }
@@ -76,7 +72,7 @@ process runTract {
     tag "${f.getSimpleName()}"
 
     input:
-        file f from tractData.take(1000)
+        file f from tractData
     output:
         // output is [summary file for that run, warnings from rstan]
         file('summary.csv') into summaries
