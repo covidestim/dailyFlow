@@ -58,7 +58,7 @@ process splitTractData {
 process runTract {
 
     container 'covidestim/covidestim:countymodel'
-    time { task.attempt == 1 ? '1h' : '30m' }
+    time { task.attempt == 1 ? '3h' : '3h' }
     cpus 3
     memory '1.5 GB'
 
