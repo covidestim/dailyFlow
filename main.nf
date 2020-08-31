@@ -1,5 +1,13 @@
 #!/usr/bin/env nextflow
 
+// Enable DSL2
+nextflow.enable.dsl = 2
+
+// By default, run all tracts
+params.n = -1
+
+params.branch = "master"
+
 // The name of the grouping variable.
 // "state": state-level runs
 // "fips": county-level runs
@@ -17,7 +25,7 @@ process makeTractData {
     maxRetries 1
     time '5m'
 
-    output: file 'data.csv' into allTractData
+    output: file 'data.csv'
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
@@ -40,25 +48,24 @@ process splitTractData {
     container 'rocker/tidyverse'
     time '1h'
 
-    input: file x from allTractData
-
-    // 'mode flatten' means that each `.csv` file is sent as its own item
-    // onto the channel. NOTE: This feature is deprecated.
-    output: file '*.csv' into tractData mode flatten
+    input:  file allInputData
+    output: file '*.csv'
 
     """
     #!/usr/local/bin/Rscript
     library(tidyverse)
 
-    d <- read_csv("$x") %>% group_by($params.key) %>% arrange(date) %>%
+    d <- read_csv("$allInputData") %>%
+      group_by($params.key) %>%
+      arrange(date) %>%
       group_walk(~write_csv(.x, paste0(.y, ".csv")))
     """
 }
 
 process runTract {
 
-    container 'covidestim/covidestim:countymodel'
-    time '30m'
+    container "covidestim/covidestim:$params.branch"
+    time '3h'
     cpus 3
     memory '1.5 GB'
 
@@ -72,11 +79,11 @@ process runTract {
     tag "${f.getSimpleName()}"
 
     input:
-        file f from tractData
+        file f
     output:
         // output is [summary file for that run, warnings from rstan]
-        file('summary.csv') into summaries
-        file('warnings.csv') into warnings
+        path 'summary.csv', emit: summary
+        path 'warning.csv', emit: warning
 
     shell:
     '''
@@ -87,42 +94,41 @@ process runTract {
     runner <- purrr::quietly(covidestim::run)
 
     d <- read_csv("!{f}")
-
-    d_cases   <- select(d, date, observation = cases)
-    d_deaths  <- select(d, date, observation = deaths)
+    d_cases  <- select(d, date, observation = cases)
+    d_deaths <- select(d, date, observation = deaths)
 
     cfg <- covidestim(ndays = nrow(d),
                       seed  = sample.int(.Machine$integer.max, 1)) +
-      input_cases(d_cases) +
-      input_deaths(d_deaths)
+      input_cases(d_cases) + input_deaths(d_deaths)
     
-    result <- runner(cfg, cores = !{task.cpus},
-                     open_progress = TRUE)
+    result <- runner(cfg, cores = !{task.cpus}, open_progress = TRUE)
  
     run_summary <- summary(result$result)
     warnings    <- result$warnings
 
     write_csv(
-      bind_cols(!{params.key} = "!{task.tag}", run_summary),
-      'summary.csv'
+      bind_cols(!{params.key} = "!{task.tag}", run_summary), 'summary.csv'
     )
 
     write_csv(
-      tibble(!{params.key} = "!{task.tag}", warnings = warnings),
-      'warnings.csv'
+      tibble(!{params.key} = "!{task.tag}", warnings = warnings), 'warning.csv'
     )
     '''
 }
 
-summaries
-    .collectFile(name: 'summary.csv',
-                 storeDir: params.outdir,
-                 keepHeader: true,
-                 skip: 1)
+def collectCSVs(chan, fname) {
+    chan.collectFile(
+        name: fname,
+        storeDir: params.outdir,
+        keepHeader: true,
+        skip: 1
+    )
+}
 
-warnings
-    .collectFile(name: 'warnings.csv',
-                 storeDir: params.outdir,
-                 keepHeader: true,
-                 skip: 1)
-
+workflow {
+main:
+    makeTractData | splitTractData | flatten | take(params.n) | runTract
+emit:
+    summary = collectCSVs(runTract.out.summary, 'summary.csv')
+    warning = collectCSVs(runTract.out.warning, 'warning.csv')
+}
