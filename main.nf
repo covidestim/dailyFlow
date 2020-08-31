@@ -13,6 +13,8 @@ params.branch = "master"
 // "fips": county-level runs
 params.key = "fips"
 
+params.raw = false
+
 // Download `covidestim/covidestim-sources` and use its makefile to generate
 // today's copy of either county-level or state-level data. Stage this data
 // for splitting by `splitTractData`
@@ -78,12 +80,14 @@ process runTract {
     // asking for the "simple name" of the file.
     tag "${f.getSimpleName()}"
 
+    publishDir "$params.outdir/raw", pattern: "*.RDS", enabled: params.raw
+
     input:
         file f
     output:
-        // output is [summary file for that run, warnings from rstan]
         path 'summary.csv', emit: summary
         path 'warning.csv', emit: warning
+        path "${task.tag}.RDS"
 
     shell:
     '''
@@ -113,6 +117,9 @@ process runTract {
     write_csv(
       tibble(!{params.key} = "!{task.tag}", warnings = warnings), 'warning.csv'
     )
+
+    if (identical("!{params.raw}", "true"))
+        saveRDS(result, "!{task.tag}.RDS")
     '''
 }
 
