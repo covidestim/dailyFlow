@@ -118,7 +118,7 @@ process runTract {
                       seed  = sample.int(.Machine$integer.max, 1)) +
       input_cases(d_cases) + input_deaths(d_deaths)
     
-    result <- runner(cfg, cores = !{task.cpus}, open_progress = TRUE)
+    result <- runner(cfg, cores = !{task.cpus})
  
     run_summary <- summary(result$result)
     warnings    <- result$warnings
@@ -129,7 +129,7 @@ process runTract {
     write_csv(tibble(!{params.key} = "!{task.tag}", warnings = warnings),
               'warning.csv')
 
-    if ("!{params.raw}" = "true") saveRDS(result, "!{task.tag}.RDS")
+    if ("!{params.raw}" == "true") saveRDS(result, "!{task.tag}.RDS")
     '''
 }
 
