@@ -3,10 +3,15 @@
 #SBATCH --mail-user=marcus.russi@yale.edu
 #SBATCH --mail-type=ALL
 
+date="$(date '+%Y-%m-%d')"
+branch=SplinesRt
+key=state
+
 # Targets YCRC/Grace
 nextflow run covidestim/dailyFlow \
-  -profile ycrc \
+  -latest \
+  -profile slurm \
   -N "marcus.russi@yale.edu" \
-  --branch SplinesRt \
-  --key state
-  --outdir "2020-08-31-SplinesRt-states"
+  --branch $branch \
+  --key $key \
+  --outdir "$date-$branch-$key"
