@@ -6,6 +6,4 @@
 # Targets YCRC/Grace
 nextflow run covidestim/dailyFlow \
   -profile ycrc \
-  -with-report report.html \
-  -with-timeline timeline.html \
   -N "marcus.russi@yale.edu"
