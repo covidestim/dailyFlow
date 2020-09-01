@@ -6,4 +6,7 @@
 # Targets YCRC/Grace
 nextflow run covidestim/dailyFlow \
   -profile ycrc \
-  -N "marcus.russi@yale.edu"
+  -N "marcus.russi@yale.edu" \
+  --branch SplinesRt \
+  --key state
+  --outdir "2020-08-31-SplinesRt-states"
