@@ -2,7 +2,7 @@
 
 # Targets AWS Batch
 aws batch submit-job \
-  --job-name $(date '+%Y-%m-%d') \
+  --job-name "$(date '+%Y-%m-%d')" \
   --job-queue "highpriority-335bde00-db1b-11ea-9c54-02848c93abf4" \
   --job-definition nextflow \
   --container-overrides command=covidestim/dailyFlow,\
