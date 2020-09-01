@@ -14,4 +14,5 @@ nextflow run covidestim/dailyFlow \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
   --key $key \
-  --outdir "$date-$branch-$key"
+  --outdir "$date-$branch-$key" \
+  --raw

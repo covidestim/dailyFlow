@@ -101,7 +101,7 @@ process runTract {
     output:
         path 'summary.csv', emit: summary // DSL2 syntax
         path 'warning.csv', emit: warning
-        path "${task.tag}.RDS"
+        path "${task.tag}.RDS" optional !params.raw
 
     shell:
     '''
