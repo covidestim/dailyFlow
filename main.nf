@@ -7,6 +7,7 @@ params.n      = -1       // By default, run all tracts
 params.branch = "master" // Branch of model to run - must be on Docker Hub
 params.key    = "fips"   // "fips" for county runs, "state" for state runs
 params.raw    = false    // Output raw `covidestim-result` object as .RDS?
+params.time   = "3h"     // Time for running each tract
 
 // The first two processes generate either county- or state-level data.
 // 
@@ -80,7 +81,7 @@ process splitTractData {
 process runTract {
 
     container "covidestim/covidestim:$params.branch" // Specify as --branch
-    time '3h'
+    time $params.time
     cpus 3
     memory '1.5 GB' // Usually needs ~800MB
 
