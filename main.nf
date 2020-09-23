@@ -143,7 +143,7 @@ process publishResults {
     container 'covidestim/webworker:latest'
     time '30m'
 
-    input:  file allResults
+    input: file allResults
     output:
         file 'summary.pack.gz'
         file 'summary.csv'
@@ -152,7 +152,7 @@ process publishResults {
     publishDir "$params.webdir/latest",  enabled: params.s3pub, overwrite: true
 
     """
-    serialize.R -o summary.pack --pop ~/data/countypop $allResults && \
+    serialize.R -o summary.pack --pop ~/data/fipspop.csv $allResults && \
       gzip -c summary.pack > summary.pack.gz
 
     cat $allResults > summary.csv
