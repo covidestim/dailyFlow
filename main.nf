@@ -7,7 +7,7 @@ params.n      = -1       // By default, run all tracts
 params.branch = "master" // Branch of model to run - must be on Docker Hub
 params.key    = "fips"   // "fips" for county runs, "state" for state runs
 params.raw    = false    // Output raw `covidestim-result` object as .RDS?
-params.time   = "3h"     // Time for running each tract
+params.time   = ["40m", "50m", "2h"] // Time for running each tract
 
 // The first two processes generate either county- or state-level data.
 // 
@@ -81,13 +81,13 @@ process splitTractData {
 process runTract {
 
     container "covidestim/covidestim:$params.branch" // Specify as --branch
-    time $params.time
     cpus 3
     memory '1.5 GB' // Usually needs ~800MB
 
-    // Retry once, before giving up
-    errorStrategy { task.attempt == 1 ? 'retry' : 'ignore' }
-    maxRetries 1
+    // Retry with stepped timelimits
+    time          { params.time[task.attempt - 1] }
+    errorStrategy { task.attempt == params.time.size() ? 'ignore' : 'retry' }
+    maxRetries    { params.time.size() }
 
     // Files from `splitTractData` are ALWAYS named by the tract they
     // represent, i.e. state name or county FIPS. We can get the name of the
@@ -119,10 +119,16 @@ process runTract {
                       seed  = sample.int(.Machine$integer.max, 1)) +
       input_cases(d_cases) + input_deaths(d_deaths)
     
+    quit(status=1)
+
     result <- runner(cfg, cores = !{task.cpus})
  
     run_summary <- summary(result$result)
     warnings    <- result$warnings
+
+    # Error on treedepth warning
+    if (any(stringr::str_detect(warnings, 'treedepth')))
+        quit(status=1)
 
     write_csv(bind_cols(!{params.key} = "!{task.tag}", run_summary),
               'summary.csv')
