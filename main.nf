@@ -119,8 +119,6 @@ process runTract {
                       seed  = sample.int(.Machine$integer.max, 1)) +
       input_cases(d_cases) + input_deaths(d_deaths)
     
-    quit(status=1)
-
     result <- runner(cfg, cores = !{task.cpus})
  
     run_summary <- summary(result$result)
@@ -140,6 +138,27 @@ process runTract {
     '''
 }
 
+process publishResults {
+
+    container 'covidestim/webworker:latest'
+    time '30m'
+
+    input:  file allResults
+    output:
+        file 'summary.pack.gz'
+        file 'summary.csv'
+
+    publishDir "$params.webdir/$params.date", enabled: params.s3pub
+    publishDir "$params.webdir/latest",  enabled: params.s3pub, overwrite: true
+
+    """
+    serialize.R -o summary.pack --pop ~/data/countypop $allResults && \
+      gzip -c summary.pack > summary.pack.gz
+
+    cat $allResults > summary.csv
+    """
+}
+
 def collectCSVs(chan, fname) {
     chan.collectFile(
         name: fname,
@@ -155,7 +174,12 @@ workflow {
 main:
     dataGenerator | splitTractData | flatten | take(params.n) | runTract
 
-emit:
     summary = collectCSVs(runTract.out.summary, 'summary.csv')
     warning = collectCSVs(runTract.out.warning, 'warning.csv')
+
+    publishResults(summary)
+
+emit:
+    summary = summary
+    warning = warning
 }

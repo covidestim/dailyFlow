@@ -9,5 +9,8 @@ aws batch submit-job \
   --job-queue $JOBQUEUE \
   --job-definition nextflow \
   --container-overrides command=covidestim/dailyFlow,\
-"-profile","amazon","--branch","SplinesRt","--key","fips",\
-"--outdir","s3://nf-test-results/$JOBNAME"
+"-profile","amazon",\
+"--branch","SplinesRt",\
+"--key","fips",\
+"--outdir","s3://nf-test-results/$JOBNAME",\
+"--date","$JOBNAME"
