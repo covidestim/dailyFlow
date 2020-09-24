@@ -15,4 +15,5 @@ nextflow run covidestim/dailyFlow \
   --branch $branch \
   --key $key \
   --outdir "$date-$branch-$key" \
-  --raw
+  --raw \
+  --date $date

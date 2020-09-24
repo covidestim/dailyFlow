@@ -146,7 +146,7 @@ process publishResults {
     input: file allResults
     output:
         file 'summary.pack.gz'
-        file 'summary.csv'
+        file 'estimates.csv'
 
     publishDir "$params.webdir/$params.date", enabled: params.s3pub
     publishDir "$params.webdir/latest",  enabled: params.s3pub, overwrite: true
@@ -155,7 +155,7 @@ process publishResults {
     serialize.R -o summary.pack --pop ~/data/fipspop.csv $allResults && \
       gzip -c summary.pack > summary.pack.gz
 
-    cat $allResults > summary.csv
+    cat $allResults > estimates.csv
     """
 }
 
