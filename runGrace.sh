@@ -10,7 +10,7 @@ key=state
 # Targets YCRC/Grace
 nextflow run covidestim/dailyFlow \
   -latest \
-  -profile slurm \
+  -profile "slurm,states" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
   --key $key \
