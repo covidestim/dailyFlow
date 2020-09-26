@@ -152,7 +152,7 @@ process publishResults {
     publishDir "$params.webdir/latest",  enabled: params.s3pub, overwrite: true
 
     """
-    serialize.R -o summary.pack --pop ~/data/fipspop.csv $allResults && \
+    serialize.R -o summary.pack --pop /opt/webworker/data/fipspop.csv $allResults && \
       gzip -c summary.pack > summary.pack.gz
 
     cat $allResults > estimates.csv
