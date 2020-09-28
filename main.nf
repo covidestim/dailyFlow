@@ -149,7 +149,7 @@ process publishResults {
         file 'estimates.csv'
 
     publishDir "$params.webdir/$params.date", enabled: params.s3pub
-    publishDir "$params.webdir/latest",  enabled: params.s3pub, overwrite: true
+    publishDir "$params.webdir/stage",  enabled: params.s3pub, overwrite: true
 
     """
     serialize.R -o summary.pack --pop /opt/webworker/data/fipspop.csv $allResults && \
