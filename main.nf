@@ -214,7 +214,7 @@ main:
     if (params.key == "fips")
         publishCountyResults(summary, jhuData.out.data)
     else
-        publichStateResults(summary, ctpData.out.data)
+        publishStateResults(summary, ctpData.out.data)
 
 emit:
     summary = summary
