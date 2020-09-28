@@ -8,6 +8,7 @@ params.branch = "master" // Branch of model to run - must be on Docker Hub
 params.key    = "fips"   // "fips" for county runs, "state" for state runs
 params.raw    = false    // Output raw `covidestim-result` object as .RDS?
 params.time   = ["40m", "50m", "2h"] // Time for running each tract
+params.s3pub  = false    // Don't upload to S3 by default
 
 // The first two processes generate either county- or state-level data.
 // 
@@ -23,7 +24,7 @@ process ctpData {
     maxRetries 1
     time '5m'
 
-    output: file 'data.csv'
+    output: path 'data.csv', emit data
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
@@ -43,7 +44,7 @@ process jhuData {
     maxRetries 1
     time '5m'
 
-    output: file 'data.csv'
+    output: path 'data.csv', emit data
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
@@ -138,24 +139,53 @@ process runTract {
     '''
 }
 
-process publishResults {
+process publishCountyResults {
 
     container 'covidestim/webworker:latest'
     time '30m'
 
-    input: file allResults
+    input: file allResults, file inputData
     output:
         file 'summary.pack.gz'
         file 'estimates.csv'
+        file 'estimates.csv.gz'
 
     publishDir "$params.webdir/$params.date", enabled: params.s3pub
     publishDir "$params.webdir/stage",  enabled: params.s3pub, overwrite: true
 
     """
     serialize.R -o summary.pack --pop /opt/webworker/data/fipspop.csv $allResults && \
-      gzip -c summary.pack > summary.pack.gz
+      gzip summary.pack
 
     cat $allResults > estimates.csv
+    gzip -k estimates.csv
+    """
+}
+
+process publishStateResults {
+
+    container 'covidestim/webworker:latest'
+    time '30m'
+
+    input: file allResults, file inputData
+    output:
+        file 'summary.pack.gz'
+        file 'estimates.csv'
+        file 'estimates.csv.gz'
+
+    publishDir "$params.webdir/$params.date/state", enabled: params.s3pub
+    publishDir "$params.webdir/stage/state", enabled: params.s3pub, overwrite: true
+
+    """
+    RtLiveConvert.R \
+      -o summary.pack \
+      --pop /opt/webworker/data/statepop.csv \
+      --input $inputData \
+      $allResults && \
+      gzip summary.pack
+
+    cat $allResults > estimates.csv
+    gzip -k estimates.csv
     """
 }
 
@@ -168,16 +198,17 @@ def collectCSVs(chan, fname) {
     )
 }
 
-dataGenerator = params.key == "fips" ? jhuData : ctpData
+generateData   = params.key == "fips" ? jhuData : ctpData
+publishResults = params.key == "fips" ? publishCountyResults : publishStateResults
 
 workflow {
 main:
-    dataGenerator | splitTractData | flatten | take(params.n) | runTract
+    generateData | splitTractData | flatten | take(params.n) | runTract
 
     summary = collectCSVs(runTract.out.summary, 'summary.csv')
     warning = collectCSVs(runTract.out.warning, 'warning.csv')
 
-    publishResults(summary)
+    publishResults(summary, generateData.out.data)
 
 emit:
     summary = summary
