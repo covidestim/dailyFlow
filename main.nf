@@ -24,7 +24,7 @@ process ctpData {
     maxRetries 1
     time '5m'
 
-    output: path 'data.csv', emit data
+    output: path 'data.csv', emit: data
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
@@ -44,7 +44,7 @@ process jhuData {
     maxRetries 1
     time '5m'
 
-    output: path 'data.csv', emit data
+    output: path 'data.csv', emit: data
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
@@ -144,7 +144,9 @@ process publishCountyResults {
     container 'covidestim/webworker:latest'
     time '30m'
 
-    input: file allResults, file inputData
+    input:
+        file allResults
+        file inputData
     output:
         file 'summary.pack.gz'
         file 'estimates.csv'
@@ -167,7 +169,9 @@ process publishStateResults {
     container 'covidestim/webworker:latest'
     time '30m'
 
-    input: file allResults, file inputData
+    input:
+        file allResults
+        file inputData
     output:
         file 'summary.pack.gz'
         file 'estimates.csv'
@@ -199,7 +203,6 @@ def collectCSVs(chan, fname) {
 }
 
 generateData   = params.key == "fips" ? jhuData : ctpData
-publishResults = params.key == "fips" ? publishCountyResults : publishStateResults
 
 workflow {
 main:
@@ -208,7 +211,10 @@ main:
     summary = collectCSVs(runTract.out.summary, 'summary.csv')
     warning = collectCSVs(runTract.out.warning, 'warning.csv')
 
-    publishResults(summary, generateData.out.data)
+    if (params.key == "fips")
+        publishCountyResults(summary, jhuData.out.data)
+    else
+        publichStateResults(summary, ctpData.out.data)
 
 emit:
     summary = summary
