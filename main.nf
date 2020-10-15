@@ -118,7 +118,10 @@ process runTract {
 
     cfg <- covidestim(ndays = nrow(d),
                       seed  = sample.int(.Machine$integer.max, 1)) +
-      input_cases(d_cases) + input_deaths(d_deaths)
+      input_cases(d_cases) + input_deaths(d_deaths) +
+      priors_transitions(p_die_if_inf = get_ifr_prior("!{task.tag}"))
+
+    print(cfg)
     
     result <- runner(cfg, cores = !{task.cpus})
  
