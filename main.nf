@@ -117,7 +117,8 @@ process runTract {
     d_deaths <- select(d, date, observation = deaths)
 
     cfg <- covidestim(ndays = nrow(d),
-                      seed  = sample.int(.Machine$integer.max, 1)) +
+                      seed  = sample.int(.Machine$integer.max, 1),
+                      pop_size = get_pop("!{task.tag}")) +
       input_cases(d_cases) + input_deaths(d_deaths) +
       priors_transitions(p_die_if_inf = get_ifr_prior("!{task.tag}"))
 
