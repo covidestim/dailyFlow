@@ -10,6 +10,7 @@ aws batch submit-job \
   --job-definition nextflow \
   --container-overrides command=covidestim/dailyFlow,\
 "-latest",\
+"-r","master",\
 "-profile","amazon,counties",\
 "--branch","SplinesRt",\
 "--key","fips",\
