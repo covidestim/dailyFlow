@@ -3,19 +3,34 @@
 #SBATCH --mail-user=marcus.russi@yale.edu
 #SBATCH --mail-type=ALL
 
+# This script is for TESTING ONLY. In particular, the following changes should
+# be made when transitioning from testing to production:
+#
+# - BRANCH should be modified
+#
+# - the "-r" flag should be modified
+#
+# - "--s3pub" should be removed (which will re-enable it due to nextflow.config)
+#
+# - `nextflow.config` should be thoroughly examined
+#
+# - "-outdir" should be changed to use the local FS, look at an old commit
+#   to find the exact syntax
+
 date="$(date '+%Y-%m-%d')"
-branch=SplinesRt
+branch="ifr-frozen"
 key=state
 
 module load awscli
 
 # Targets YCRC/Grace
 nextflow run covidestim/dailyFlow \
+  -r "ifr" \
+  --s3pub false \
   -latest \
   -profile "slurm,states" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
   --key $key \
-  --outdir "$date-$branch-$key" \
-  --raw \
+  --outdir "s3://nf-test-results/$date-$branch-$key" \
   --date $date
