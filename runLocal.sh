@@ -21,14 +21,12 @@ date="$(date '+%Y-%m-%d')"
 branch="ifr-frozen"
 key=state
 
-module load awscli
-
 # Targets YCRC/Grace
 nextflow run covidestim/dailyFlow \
   -r "ifr" \
   --s3pub false \
   -latest \
-  -profile "slurm,states" \
+  -profile "local,states" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
   --key $key \

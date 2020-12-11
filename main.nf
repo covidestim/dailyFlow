@@ -61,6 +61,26 @@ process jhuData {
 // Receive input data, either for states or counties, and split it by the
 // geographic tract under consideration ("fips" or "state"). The resulting
 // `.csv`s are delivered to the `runTract` process.
+process filterTestTracts {
+
+    container 'covidestim/webworker:latest'
+    time '10m'
+
+    input:  file allTractData
+    output: file 'filtered_data.csv', emit: data
+
+    """
+    filterTestTracts.R \
+      -o filtered_data.csv \
+      --tracts /opt/webworker/data/test-tracts.csv \
+      --key $params.key \
+      $allTractData
+    """
+}
+
+// Receive input data, either for states or counties, and split it by the
+// geographic tract under consideration ("fips" or "state"). The resulting
+// `.csv`s are delivered to the `runTract` process.
 process splitTractData {
 
     container 'rocker/tidyverse'
@@ -210,7 +230,7 @@ generateData   = params.key == "fips" ? jhuData : ctpData
 
 workflow {
 main:
-    generateData | splitTractData | flatten | take(params.n) | runTract
+    generateData | filterTestTracts | splitTractData | flatten | take(params.n) | runTract
 
     summary = collectCSVs(runTract.out.summary, 'summary.csv')
     warning = collectCSVs(runTract.out.warning, 'warning.csv')
