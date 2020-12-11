@@ -67,7 +67,7 @@ process filterTestTracts {
     time '10m'
 
     input:  file allTractData
-    output: file 'filtered_data.csv', emit: data
+    output: path 'filtered_data.csv', emit: data
 
     """
     filterTestTracts.R \
