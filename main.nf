@@ -173,6 +173,7 @@ process publishCountyResults {
     input:
         file allResults
         file inputData
+        file allWarnings
     output:
         file 'summary.pack.gz'
         file 'estimates.csv'
@@ -182,11 +183,27 @@ process publishCountyResults {
     publishDir "$params.webdir/stage",  enabled: params.s3pub, overwrite: true
 
     """
+    # Create a WebPack file for serving to web browsers
     serialize.R -o summary.pack --pop /opt/webworker/data/fipspop.csv $allResults && \
       gzip summary.pack
 
+    # Gzip the estimates
     cat $allResults > estimates.csv
     gzip -k estimates.csv
+
+    # Add a run.date column and insert the results into the database.
+    # `tagColumn` is an awk script from the `webworker` container.
+    tagColumnAfter 'run.date' "$params.date" < $allResults | \
+      psql -f /opt/webworker/scripts/copy_county_estimates_dev.sql $params.PGCONN
+
+    # Do the same for warnings, but prepend the 'run.date' column because of a
+    # preexisting poor choice of SQL table structure..
+    tagColumnBefore 'run.date' "$params.date" < $allWarnings | \
+      psql -f /opt/webworker/scripts/copy_warnings_dev.sql $params.PGCONN
+
+    # And finally, copy the input data
+    tagColumnAfter 'run.date' "$params.date" < $inputData | \
+      psql -f /opt/webworker/scripts/copy_inputs_dev.sql $params.PGCONN
     """
 }
 
@@ -238,7 +255,7 @@ main:
     warning = collectCSVs(runTract.out.warning, 'warning.csv')
 
     if (params.key == "fips")
-        publishCountyResults(summary, jhuData.out.data)
+        publishCountyResults(summary, jhuData.out.data, warning)
     else
         publishStateResults(summary, ctpData.out.data)
 

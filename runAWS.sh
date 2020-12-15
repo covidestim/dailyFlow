@@ -9,7 +9,8 @@
 # - `nextflow.config` should be thoroughly examined
 # - "--outdir" should be changed to remove the 'ifr-' prefix
 
-JOBNAME="$(date '+%Y-%m-%d')"
+date="$(date '+%Y-%m-%d')"
+JOBNAME="$date-ifr-frozen"
 JOBQUEUE="highpriority-335bde00-db1b-11ea-9c54-02848c93abf4"
 BRANCH="ifr-frozen"
 
@@ -26,5 +27,6 @@ aws batch submit-job \
 "-N","marcus.russi@yale.edu",\
 "--branch","$BRANCH",\
 "--key","fips",\
-"--outdir","s3://nf-test-results/ifr-fips-$JOBNAME",\
-"--date","$JOBNAME"
+"--outdir","s3://nf-test-results/ifr-fips-$date",\
+"--date","$date",\
+"--PGCONN","$(cat SECRET_RDS_CREDENTIALS)"
