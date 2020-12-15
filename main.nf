@@ -149,8 +149,10 @@ process runTract {
     run_summary <- summary(result$result)
     warnings    <- result$warnings
 
-    # Error on treedepth warning
-    if (any(stringr::str_detect(warnings, 'treedepth')))
+    # Error on treedepth warning, or any divergent transitions warning
+    # indicating >= 10 divergent transitions
+    if (any(stringr::str_detect(warnings, 'treedepth')) ||
+        any(stringr::str_detect(warnings, ' [0-9]{2,} divergent')))
         quit(status=1)
 
     write_csv(bind_cols(!{params.key} = "!{task.tag}", run_summary),
