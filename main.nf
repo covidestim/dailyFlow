@@ -7,7 +7,7 @@ params.n      = -1       // By default, run all tracts
 params.branch = "master" // Branch of model to run - must be on Docker Hub
 params.key    = "fips"   // "fips" for county runs, "state" for state runs
 params.raw    = false    // Output raw `covidestim-result` object as .RDS?
-params.time   = ["55m", "70m", "2h"] // Time for running each tract
+params.time   = ["70m", "2h", "2h"] // Time for running each tract
 params.s3pub  = false    // Don't upload to S3 by default
 
 // The first two processes generate either county- or state-level data.
