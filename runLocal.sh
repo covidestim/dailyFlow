@@ -31,4 +31,5 @@ nextflow run covidestim/dailyFlow \
   --branch $branch \
   --key $key \
   --outdir "s3://nf-test-results/ifr-state-$date" \
-  --date $date
+  --date $date \
+  --PGCONN "$(cat SECRET_RDS_CREDENTIALS)"

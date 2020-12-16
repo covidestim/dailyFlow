@@ -199,11 +199,11 @@ process publishCountyResults {
     # Do the same for warnings, but prepend the 'run.date' column because of a
     # preexisting poor choice of SQL table structure..
     tagColumnBefore 'run.date' "$params.date" < $allWarnings | \
-      psql -f /opt/webworker/scripts/copy_warnings_dev.sql $params.PGCONN
+      psql -f /opt/webworker/scripts/copy_warnings_dev.sql "$params.PGCONN"
 
     # And finally, copy the input data
     tagColumnAfter 'run.date' "$params.date" < $inputData | \
-      psql -f /opt/webworker/scripts/copy_inputs_dev.sql $params.PGCONN
+      psql -f /opt/webworker/scripts/copy_inputs_dev.sql "$params.PGCONN"
     """
 }
 
