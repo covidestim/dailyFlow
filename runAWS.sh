@@ -29,4 +29,5 @@ aws batch submit-job \
 "--key","fips",\
 "--outdir","s3://nf-test-results/ifr-fips-$date",\
 "--date","$date",\
+"--raw",\
 "--PGCONN","$(cat SECRET_RDS_CREDENTIALS)"
