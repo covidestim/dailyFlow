@@ -109,6 +109,7 @@ process splitTractData {
           .x,
           ifelse(
             # If there is only one tract in this group
+            (!{params.ngroups} != 10000000) &&
             (pull(.x, !{params.key}) %>% unique %>% length) == 1,
             # Then name the CSV file after that tract
             paste0(.x[["!{params.key}"]][1], ".csv"),
@@ -194,6 +195,8 @@ process runTractOptimizer {
     cpus 1
     memory '1.5 GB' // Usually needs ~800MB
 
+    time '1h'
+
     // Files from `splitTractData` are ALWAYS named by the tract they
     // represent, i.e. state name or county FIPS. We can get the name of the
     // tract by asking for the "simple name" of the file.
@@ -217,7 +220,11 @@ process runTractOptimizer {
 
     runner <- purrr::quietly(covidestim::runOptimizer)
 
-    d <- read_csv("!{tractData}") %>% group_by(!{params.key})
+    d <- read_csv(
+      "!{tractData}",
+      col_types = cols(.default = col_guess(), !{params.key} = col_character())
+    ) %>%
+      group_by(!{params.key})
 
     print("Tracts in this process:")
     print(pull(d, !{params.key}) %>% unique)
