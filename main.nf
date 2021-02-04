@@ -415,7 +415,7 @@ def collectCSVs(chan, fname) {
 }
 
 generateData = params.key == "fips" ? jhuData : ctpData
-runTract = params.key == "fips" ? runTractOptimizer : runTractSampler
+runTract = params.key == "fips" && !params.alwayssample ? runTractOptimizer : runTractSampler
 
 workflow {
 main:
@@ -424,7 +424,7 @@ main:
     else
       generateData | splitTractData | flatten | take(params.n) | runTract
 
-    if (params.key == "fips") {
+    if (params.key == "fips" && !params.alwayssample) {
         summary = collectCSVs(runTractOptimizer.out.summary, 'summary.csv')
         warning = collectCSVs(runTractOptimizer.out.warning, 'warning.csv')
         optvals = collectCSVs(runTractOptimizer.out.optvals, 'optvals.csv')
