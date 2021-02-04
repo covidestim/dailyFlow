@@ -3,6 +3,7 @@
 // Enable DSL2
 nextflow.enable.dsl = 2
 
+params.testtracts   = false    // By default, run all tracts
 params.PGCONN       = "null"   // By default, there's no DB connection
 params.timemachine  = false    // By default, use latest data
 params.alwayssample = false    // By default, fall back to the optimizer for states
@@ -418,7 +419,10 @@ runTract = params.key == "fips" ? runTractOptimizer : runTractSampler
 
 workflow {
 main:
-    generateData | filterTestTracts | splitTractData | flatten | take(params.n) | runTract
+    if (params.testtracts)
+      generateData | filterTestTracts | splitTractData | flatten | take(params.n) | runTract
+    else
+      generateData | splitTractData | flatten | take(params.n) | runTract
 
     if (params.key == "fips") {
         summary = collectCSVs(runTractOptimizer.out.summary, 'summary.csv')
