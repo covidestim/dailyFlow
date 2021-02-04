@@ -3,13 +3,16 @@
 // Enable DSL2
 nextflow.enable.dsl = 2
 
-params.n       = -1       // By default, run all tracts
-params.ngroups = 10000000 // By default, each tract gets its own NF process
-params.branch  = "master" // Branch of model to run - must be on Docker Hub
-params.key     = "fips"   // "fips" for county runs, "state" for state runs
-params.raw     = false    // Output raw `covidestim-result` object as .RDS?
-params.time    = ["70m", "2h", "150m"] // Time for running each tract
-params.s3pub   = false    // Don't upload to S3 by default
+params.PGCONN       = "null"   // By default, there's no DB connection
+params.timemachine  = false    // By default, use latest data
+params.alwayssample = false    // By default, fall back to the optimizer for states
+params.n            = -1       // By default, run all tracts
+params.ngroups      = 10000000 // By default, each tract gets its own NF process
+params.branch       = "master" // Branch of model to run - must be on Docker Hub
+params.key          = "fips"   // "fips" for county runs, "state" for state runs
+params.raw          = false    // Output raw `covidestim-result` object as .RDS?
+params.time         = ["70m", "2h", "150m"] // Time for running each tract
+params.s3pub        = false    // Don't upload to S3 by default
 
 // The first two processes generate either county- or state-level data.
 // 
@@ -49,14 +52,31 @@ process jhuData {
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
-    """
-    git clone https://github.com/covidestim/covidestim-sources && \
-    cd covidestim-sources && \
-    git submodule init && \
-    git submodule update --depth 1 --remote data-sources/jhu-data && \
-    make -B data-products/jhu-counties.csv && \
-    mv data-products/jhu-counties.csv ../data.csv
-    """
+    shell:
+
+    if (params.timemachine != false)
+      """
+      echo "Using time machine ending on date !{params.timemachine}"
+      git clone https://github.com/covidestim/covidestim-sources && \
+        cd covidestim-sources && \
+        git submodule init && \
+        git submodule update --remote data-sources/jhu-data && \
+        cd data-sources/jhu-data && \
+        git log -1 --before !{params.timemachine}T06:00:00Z --pretty=%h | xargs git checkout && \
+        cd ../.. && \
+        make -B data-products/jhu-counties.csv && \
+        mv data-products/jhu-counties.csv ../data.csv
+      """
+    else 
+      """
+      echo "Not using time machine; pulling latest data"
+      git clone https://github.com/covidestim/covidestim-sources && \
+        cd covidestim-sources && \
+        git submodule init && \
+        git submodule update --depth 1 --remote data-sources/jhu-data && \
+        make -B data-products/jhu-counties.csv && \
+        mv data-products/jhu-counties.csv ../data.csv
+      """
 }
 
 // Receive input data, either for states or counties, and split it by the
@@ -189,12 +209,13 @@ process runTractSampler {
       opt_vals    <- resultOptimizer$result$opt_vals
 
       # If it's the last attempt
-      if ("!{task.attempt == params.time.size()}" == "true") {
+      if ("!{task.attempt == params.time.size()}" == "true" &&
+          "!{params.alwayssample}" == "false") {
         return(list(
           run_summary = bind_cols(!{params.key} = region, run_summary),
-          warnings    = bind_cols(!{params.key} = region, warnings),
-          opt_vals    = bind_cols(!{params.key} = region, opt_vals),
-          method      = bind_cols(!{params.key} = region, method = "optimizer"),
+          warnings    = bind_cols(!{params.key} = region, warnings = warnings),
+          opt_vals    = bind_cols(!{params.key} = region, optvals  = opt_vals),
+          method      = bind_cols(!{params.key} = region, method   = "optimizer"),
           raw         = resultOptimizer
         ))
       }
@@ -212,8 +233,8 @@ process runTractSampler {
 
       return(list(
         run_summary = bind_cols(!{params.key} = region, run_summary),
-        warnings    = bind_cols(!{params.key} = region, warnings),
-        opt_vals    = tibble(!{params.key} = region, opt_vals = numeric()),
+        warnings    = bind_cols(!{params.key} = region, warnings = warnings),
+        opt_vals    = tibble(!{params.key} = region,    optvals = numeric()),
         method      = bind_cols(!{params.key} = region, method = "sampler"),
         raw         = result
       ))
@@ -290,8 +311,8 @@ process runTractOptimizer {
 
       list(
         run_summary = bind_cols(!{params.key} = region, run_summary),
-        warnings    = bind_cols(!{params.key} = region, warnings),
-        opt_vals    = bind_cols(!{params.key} = region, result$result$opt_vals),
+        warnings    = bind_cols(!{params.key} = region, warnings = warnings),
+        opt_vals    = bind_cols(!{params.key} = region, optvals = result$result$opt_vals),
         raw         = result
       )
     })
@@ -332,19 +353,23 @@ process publishCountyResults {
     cat $allResults > estimates.csv
     gzip -k estimates.csv
 
-    # Add a run.date column and insert the results into the database.
-    # `tagColumn` is an awk script from the `webworker` container.
-    tagColumnAfter 'run.date' "$params.date" < $allResults | \
-      psql -f /opt/webworker/scripts/copy_county_estimates_dev.sql "$params.PGCONN"
+    if [ "$params.PGCONN" != "null" ]; then
+      # Add a run.date column and insert the results into the database.
+      # `tagColumn` is an awk script from the `webworker` container.
+      tagColumnAfter 'run.date' "$params.date" < $allResults | \
+        psql -f /opt/webworker/scripts/copy_county_estimates_dev.sql "$params.PGCONN"
 
-    # Do the same for warnings, but prepend the 'run.date' column because of a
-    # preexisting poor choice of SQL table structure..
-    tagColumnBefore 'run.date' "$params.date" < $allWarnings | \
-      psql -f /opt/webworker/scripts/copy_warnings_dev.sql "$params.PGCONN"
+      # Do the same for warnings, but prepend the 'run.date' column because of a
+      # preexisting poor choice of SQL table structure..
+      tagColumnBefore 'run.date' "$params.date" < $allWarnings | \
+        psql -f /opt/webworker/scripts/copy_warnings_dev.sql "$params.PGCONN"
 
-    # And finally, copy the input data
-    tagColumnAfter 'run.date' "$params.date" < $inputData | \
-      psql -f /opt/webworker/scripts/copy_inputs_dev.sql "$params.PGCONN"
+      # And finally, copy the input data
+      tagColumnAfter 'run.date' "$params.date" < $inputData | \
+        psql -f /opt/webworker/scripts/copy_inputs_dev.sql "$params.PGCONN"
+    else
+      echo "PGCONN not supplied, DB inserts skipped."
+    fi
     """
 }
 
