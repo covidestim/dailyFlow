@@ -12,8 +12,11 @@ params.ngroups      = 10000000 // By default, each tract gets its own NF process
 params.branch       = "master" // Branch of model to run - must be on Docker Hub
 params.key          = "fips"   // "fips" for county runs, "state" for state runs
 params.raw          = false    // Output raw `covidestim-result` object as .RDS?
-params.time         = ["70m", "2h", "150m"] // Time for running each tract
 params.s3pub        = false    // Don't upload to S3 by default
+
+// Commenting out the below line because it may be messing with `params.time`
+// as it's defined in `nextflow.config`.
+// params.time         = ["70m", "2h", "150m"] // Time for running each tract
 
 // The first two processes generate either county- or state-level data.
 // 
@@ -55,7 +58,7 @@ process jhuData {
     // the input data for the model
     shell:
 
-    if (params.timemachine != false)
+    if (params.timemachine == true)
       """
       echo "Using time machine ending on date !{params.timemachine}"
       git clone https://github.com/covidestim/covidestim-sources && \
