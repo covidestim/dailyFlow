@@ -387,6 +387,7 @@ process publishStateResults {
         file inputData
         file warning
         file optVals
+        file method
     output:
         file 'summary.pack.gz'
         file 'estimates.csv'
@@ -400,6 +401,7 @@ process publishStateResults {
       -o summary.pack \
       --pop /opt/webworker/data/statepop.csv \
       --input $inputData \
+      --method $method \
       $allResults && \
       gzip summary.pack
 
@@ -441,7 +443,7 @@ main:
     if (params.key == "fips")
         publishCountyResults(summary, jhuData.out.data, warning, optvals)
     else
-        publishStateResults(summary, ctpData.out.data, warning, optvals)
+        publishStateResults(summary, ctpData.out.data, warning, optvals, method)
 
 emit:
     summary = summary
