@@ -19,7 +19,7 @@
 
 date="$(date '+%Y-%m-%d')"
 branch="master"
-key=state
+key=fips
 
 module load awscli
 
@@ -28,11 +28,12 @@ nextflow run covidestim/dailyFlow \
   -r "master" \
   --s3pub true \
   -latest \
-  -profile "slurm,states,farnam" \
+  --ngroups 150 \
+  -profile "slurm,counties,farnam" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
   --raw false \
   --key $key \
-  --outdir "s3://nf-test-results/$date-state" \
+  --outdir "s3://nf-test-results/$date" \
   --date $date \
   --PGCONN "$(cat SECRET_RDS_CREDENTIALS)"
