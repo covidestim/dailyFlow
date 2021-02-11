@@ -18,20 +18,21 @@
 #   to find the exact syntax
 
 date="$(date '+%Y-%m-%d')"
-branch="ifr-frozen"
+branch="master"
 key=state
 
 module load awscli
 
 # Targets YCRC/Grace
 nextflow run covidestim/dailyFlow \
-  -r "ifr" \
-  --s3pub false \
+  -r "master" \
+  --s3pub true \
   -latest \
   -profile "slurm,states" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
+  --raw false \
   --key $key \
-  --outdir "s3://nf-test-results/ifr-state-$date" \
+  --outdir "s3://nf-test-results/$date-state" \
   --date $date \
   --PGCONN "$(cat SECRET_RDS_CREDENTIALS)"
