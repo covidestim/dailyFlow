@@ -43,7 +43,7 @@ main:
       runner = "runTractOptimizer"
     } else {
       runTract = params.key == "fips" ? runTractOptimizer : runTractSampler
-      runner = params.key == "fips" ? "runTractSampler" : "runTractOptimizer"
+      runner = params.key == "fips" ? "runTractOptimizer" : "runTractSampler"
     }
 
     if (params.testtracts)
