@@ -7,9 +7,10 @@ params.testtracts   = false    // By default, run all tracts
 params.PGCONN       = "null"   // By default, there's no DB connection
 params.timemachine  = false    // By default, use latest data
 params.alwayssample = false    // By default, fall back to the optimizer for states
+params.alwaysoptimize = false  // By default, use the sampler for states
 params.n            = -1       // By default, run all tracts
 params.ngroups      = 10000000 // By default, each tract gets its own NF process
-params.branch       = "master" // Branch of model to run - must be on Docker Hub
+params.branch       = "latest" // Branch of model to run - must be on Docker Hub
 params.key          = "fips"   // "fips" for county runs, "state" for state runs
 params.raw          = false    // Output raw `covidestim-result` object as .RDS?
 params.s3pub        = false    // Don't upload to S3 by default
@@ -28,17 +29,29 @@ def collectCSVs(chan, fname) {
     )
 }
 
-generateData = params.key == "fips" ? jhuData : ctpData
-runTract = params.key == "fips" && !params.alwayssample ? runTractOptimizer : runTractSampler
-
 workflow {
 main:
+    generateData = params.key == "fips" ? jhuData : ctpData
+
+    runner = ""
+
+    if (params.alwayssample) {
+      runTract = runTractSampler
+      runner = "runTractSampler"
+    } else if (params.alwaysoptimize) {
+      runTract = runTractOptimizer
+      runner = "runTractOptimizer"
+    } else {
+      runTract = params.key == "fips" ? runTractOptimizer : runTractSampler
+      runner = params.key == "fips" ? "runTractSampler" : "runTractOptimizer"
+    }
+
     if (params.testtracts)
       generateData | filterTestTracts | splitTractData | flatten | take(params.n) | runTract
     else
       generateData | splitTractData | flatten | take(params.n) | runTract
 
-    if (params.key == "fips" && !params.alwayssample) {
+    if (runner == "runTractOptimizer") {
         summary = collectCSVs(runTractOptimizer.out.summary, 'summary.csv')
         warning = collectCSVs(runTractOptimizer.out.warning, 'warning.csv')
         optvals = collectCSVs(runTractOptimizer.out.optvals, 'optvals.csv')
@@ -49,9 +62,9 @@ main:
         method  = collectCSVs(runTractSampler.out.method,  'method.csv' )
     }
 
-    if (params.key == "fips")
+    if (params.s3pub && params.key == "fips")
         publishCountyResults(summary, jhuData.out.data, warning, optvals)
-    else
+    else if (params.s3pub && params.key == "state")
         publishStateResults(summary, ctpData.out.data, warning, optvals, method)
 
 emit:
