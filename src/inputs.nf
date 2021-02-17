@@ -38,7 +38,7 @@ process jhuData {
     // the input data for the model
     shell:
 
-    if (params.timemachine == true)
+    if (params.timemachine != false)
       """
       echo "Using time machine ending on date !{params.timemachine}"
       git clone https://github.com/covidestim/covidestim-sources && \
