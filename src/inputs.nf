@@ -32,7 +32,9 @@ process jhuData {
     maxRetries 1
     time '15m'
 
-    output: path 'data.csv', emit: data
+    output:
+      path 'data.csv',    emit: data
+      path 'rejects.csv', emit: rejects
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
@@ -48,8 +50,9 @@ process jhuData {
         cd data-sources/jhu-data && \
         git log -1 --before !{params.timemachine}T06:00:00Z --pretty=%h | xargs git checkout && \
         cd ../.. && \
-        make -B data-products/jhu-counties.csv && \
-        mv data-products/jhu-counties.csv ../data.csv
+        make -B data-products/jhu-counties.csv data-products/jhu-counties-rejects.csv && \
+        mv data-products/jhu-counties.csv ../data.csv && \
+        mv data-products/jhu-counties-rejects.csv ../rejects.csv
       """
     else 
       """
@@ -58,8 +61,9 @@ process jhuData {
         cd covidestim-sources && \
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
-        make -B data-products/jhu-counties.csv && \
-        mv data-products/jhu-counties.csv ../data.csv
+        make -B data-products/jhu-counties.csv data-products/jhu-counties-rejects.csv && \
+        mv data-products/jhu-counties.csv ../data.csv && \
+        mv data-products/jhu-counties-rejects.csv ../rejects.csv
       """
 }
 
