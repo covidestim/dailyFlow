@@ -6,8 +6,12 @@ process filterTestTracts {
     container 'covidestim/webworker:latest'
     time '10m'
 
-    input:  file allTractData
-    output: path 'filtered_data.csv', emit: data
+    input:
+      file allTractData
+      file rejects
+    output:
+      path 'filtered_data.csv', emit: data
+      path 'rejects.csv', emit: rejects
 
     """
     filterTestTracts.R \
@@ -26,7 +30,9 @@ process splitTractData {
     container 'rocker/tidyverse'
     time '1h' // S3 copies take forever, probably a better way to do this
 
-    input:  file allTractData
+    input:
+      file allTractData
+      file rejects
     output: file '*.csv'
 
     shell:
