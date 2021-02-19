@@ -42,8 +42,8 @@ main:
       runTract = runTractOptimizer
       runner = "runTractOptimizer"
     } else {
-      runTract = params.key == "fips" ? runTractOptimizer : runTractSampler
-      runner = params.key == "fips" ? "runTractOptimizer" : "runTractSampler"
+      runTract = params.key == "fips" ? runTractOptimizer   : runTractSampler
+      runner   = params.key == "fips" ? "runTractOptimizer" : "runTractSampler"
     }
 
     if (params.testtracts)
@@ -55,6 +55,7 @@ main:
         summary = collectCSVs(runTractOptimizer.out.summary, 'summary.csv')
         warning = collectCSVs(runTractOptimizer.out.warning, 'warning.csv')
         optvals = collectCSVs(runTractOptimizer.out.optvals, 'optvals.csv')
+        method  = collectCSVs(runTractOptimizer.out.method,  'method.csv' )
     } else {
         summary = collectCSVs(runTractSampler.out.summary, 'summary.csv')
         warning = collectCSVs(runTractSampler.out.warning, 'warning.csv')

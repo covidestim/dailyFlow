@@ -129,6 +129,7 @@ process runTractOptimizer {
         path 'summary.csv', emit: summary // DSL2 syntax
         path 'warning.csv', emit: warning
         path 'optvals.csv', emit: optvals
+        path 'method.csv',  emit: method
         path "${task.tag}.RDS" optional !params.raw
 
     shell:
@@ -170,6 +171,7 @@ process runTractOptimizer {
         run_summary = bind_cols(!{params.key} = region, run_summary),
         warnings    = bind_cols(!{params.key} = region, warnings = warnings),
         opt_vals    = bind_cols(!{params.key} = region, optvals = result$result$opt_vals),
+        method      = bind_cols(!{params.key} = region, method = 'optimizer'),
         raw         = result
       )
     })
@@ -177,6 +179,7 @@ process runTractOptimizer {
     write_csv(purrr::map(allResults, 'run_summary') %>% bind_rows, 'summary.csv')
     write_csv(purrr::map(allResults, 'warnings')    %>% bind_rows, 'warning.csv')
     write_csv(purrr::map(allResults, 'opt_vals')    %>% bind_rows, 'optvals.csv')
+    write_csv(purrr::map(allResults, 'method')      %>% bind_rows, 'method.csv')
 
     if ("!{params.raw}" == "true")
       saveRDS(purrr::map(allResults, 'raw'), "!{task.tag}.RDS")
