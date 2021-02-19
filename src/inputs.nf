@@ -12,7 +12,9 @@ process ctpData {
     maxRetries 1
     time '5m'
 
-    output: path 'data.csv', emit: data
+    output:
+      path 'data.csv',    emit: data
+      path 'rejects.csv', emit: rejects
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
@@ -21,6 +23,8 @@ process ctpData {
     cd covidestim-sources && \
     make -B data-products/covidtracking-smoothed.csv && \
     mv data-products/covidtracking-smoothed.csv ../data.csv
+
+    echo 'state,code,reason' > ../rejects.csv
     """
 }
 

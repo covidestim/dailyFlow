@@ -62,13 +62,23 @@ main:
         method  = collectCSVs(runTractSampler.out.method,  'method.csv' )
     }
 
-    if (params.s3pub && params.key == "fips")
-        publishCountyResults(summary, jhuData.out.data, warning, optvals)
-    else if (params.s3pub && params.key == "state")
-        publishStateResults(summary, ctpData.out.data, warning, optvals, method)
+    if (params.key == "fips") {
+        input   = jhuData.out.data
+        rejects = jhuData.out.rejects
+
+        publishCountyResults(summary, input, rejects, warning, optvals)
+    } else {
+        input   = ctpData.out.data
+        rejects = ctpData.out.rejects
+
+        publishStateResults(summary, input, rejects, warning, optvals, method)
+    }
+
+    collectCSVs(rejects, 'rejects.csv')
 
 emit:
     summary = summary
     warning = warning
     optvals = optvals
+    rejects = rejects
 }

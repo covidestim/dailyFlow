@@ -6,6 +6,7 @@ process publishCountyResults {
     input:
         file allResults
         file inputData
+        file rejects
         file allWarnings
         file optVals
     output:
@@ -53,6 +54,7 @@ process publishStateResults {
     input:
         file allResults
         file inputData
+        file rejects
         file warning
         file optVals
         file method
