@@ -77,6 +77,17 @@ process publishStateResults {
 
     cat $allResults > estimates.csv
     gzip -k estimates.csv
+
+    if [ "$params.PGCONN" != "null" ]; then
+
+      # Add a run.date column and insert the results into the database.
+      # `tagColumn` is an awk script from the `webworker` container.
+      tagColumnAfter 'run.date' "$params.date" < $allResults | \
+        psql -f /opt/webworker/scripts/copy_state_estimates.sql "$params.PGCONN"
+
+    else
+      echo "PGCONN not supplied, DB inserts skipped."
+    fi
     """
 }
 
