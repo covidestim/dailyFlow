@@ -71,3 +71,46 @@ process jhuData {
       """
 }
 
+process jhuStateData {
+    container 'rocker/tidyverse' // Name of singularity+docker container
+
+    // Retry once in case of HTTP errors, before giving up
+    errorStrategy 'retry'
+    maxRetries 1
+    time '15m'
+
+    output:
+      path 'data.csv',    emit: data
+      path 'rejects.csv', emit: rejects
+
+    // Clone the 'covidestim-sources' repository, and use it to generate
+    // the input data for the model
+    shell:
+
+    if (params.timemachine != false)
+      """
+      echo "Using time machine ending on date !{params.timemachine}"
+      git clone https://github.com/covidestim/covidestim-sources && \
+        cd covidestim-sources && \
+        git submodule init && \
+        git submodule update --remote data-sources/jhu-data && \
+        cd data-sources/jhu-data && \
+        git log -1 --before !{params.timemachine}T06:00:00Z --pretty=%h | xargs git checkout && \
+        cd ../.. && \
+        make -B data-products/jhu-states.csv data-products/jhu-states-rejects.csv && \
+        mv data-products/jhu-states.csv ../data.csv && \
+        mv data-products/jhu-states-rejects.csv ../rejects.csv
+      """
+    else 
+      """
+      echo "Not using time machine; pulling latest data"
+      git clone https://github.com/covidestim/covidestim-sources && \
+        cd covidestim-sources && \
+        git submodule init && \
+        git submodule update --depth 1 --remote data-sources/jhu-data && \
+        make -B data-products/jhu-states.csv data-products/jhu-states-rejects.csv && \
+        mv data-products/jhu-states.csv ../data.csv && \
+        mv data-products/jhu-states-rejects.csv ../rejects.csv
+      """
+}
+
