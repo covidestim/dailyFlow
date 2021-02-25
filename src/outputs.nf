@@ -37,6 +37,11 @@ process publishCountyResults {
       tagColumnBefore 'run.date' "$params.date" < $allWarnings | \
         psql -f /opt/webworker/scripts/copy_warnings_dev.sql "$params.PGCONN"
 
+      # Do the same for rejects, but prepend the 'run.date' column because of a
+      # preexisting poor choice of SQL table structure..
+      tagColumnBefore 'run.date' "$params.date" < $rejects | \
+        psql -f /opt/webworker/scripts/copy_rejects.sql "$params.PGCONN"
+
       # And finally, copy the input data
       tagColumnAfter 'run.date' "$params.date" < $inputData | \
         psql -f /opt/webworker/scripts/copy_inputs_dev.sql "$params.PGCONN"
@@ -84,6 +89,11 @@ process publishStateResults {
       # `tagColumn` is an awk script from the `webworker` container.
       tagColumnAfter 'run.date' "$params.date" < $allResults | \
         psql -f /opt/webworker/scripts/copy_state_estimates.sql "$params.PGCONN"
+
+      # Do the same for rejects, but prepend the 'run.date' column because of a
+      # preexisting poor choice of SQL table structure..
+      tagColumnBefore 'run.date' "$params.date" < $rejects | \
+        psql -f /opt/webworker/scripts/copy_state_rejects.sql "$params.PGCONN"
 
     else
       echo "PGCONN not supplied, DB inserts skipped."
