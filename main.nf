@@ -15,7 +15,7 @@ params.key          = "fips"   // "fips" for county runs, "state" for state runs
 params.raw          = false    // Output raw `covidestim-result` object as .RDS?
 params.s3pub        = false    // Don't upload to S3 by default
 
-include {ctpData; jhuData} from './src/inputs'
+include {ctpData; jhuData; jhuStateData} from './src/inputs'
 include {filterTestTracts; splitTractData} from './src/inputs-utils'
 include {runTractSampler; runTractOptimizer} from './src/modelrunners'
 include {publishStateResults; publishCountyResults} from './src/outputs'
@@ -31,7 +31,7 @@ def collectCSVs(chan, fname) {
 
 workflow {
 main:
-    generateData = params.key == "fips" ? jhuData : ctpData
+    generateData = params.key == "fips" ? jhuData : jhuStateData
 
     runner = ""
 
@@ -69,8 +69,8 @@ main:
 
         publishCountyResults(summary, input, rejects, warning, optvals)
     } else {
-        input   = ctpData.out.data
-        rejects = ctpData.out.rejects
+        input   = jhuStateData.out.data
+        rejects = jhuStateData.out.rejects
 
         publishStateResults(summary, input, rejects, warning, optvals, method)
     }
