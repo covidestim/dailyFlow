@@ -2,7 +2,7 @@ process runTractSampler {
 
     container "covidestim/covidestim:$params.branch" // Specify as --branch
     cpus 3
-    memory '1.5 GB' // Usually needs ~800MB
+    memory '3 GB' // Currently unsure of exact memory needs. At least 800MB
 
     // Retry with stepped timelimits
     time          { params.time[task.attempt - 1] }
@@ -111,7 +111,7 @@ process runTractOptimizer {
 
     container "covidestim/covidestim:$params.branch" // Specify as --branch
     cpus 1
-    memory '1.5 GB' // Usually needs ~800MB
+    memory '3 GB' // Currently unsure of exact memory needs. At least 800MB
 
     time '1h'
 
