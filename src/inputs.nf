@@ -88,7 +88,9 @@ process jhuStateData {
     shell:
 
     if (params.timemachine != false)
-      """
+      '''
+      INPUTPREFIX=jhu-states!{params.splicedate ? "-spliced-" + params.splicedate : ""}
+
       echo "Using time machine ending on date !{params.timemachine}"
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
@@ -97,20 +99,24 @@ process jhuStateData {
         cd data-sources/jhu-data && \
         git log -1 --before !{params.timemachine}T06:00:00Z --pretty=%h | xargs git checkout && \
         cd ../.. && \
-        make -B data-products/jhu-states.csv data-products/jhu-states-rejects.csv && \
-        mv data-products/jhu-states.csv ../data.csv && \
-        mv data-products/jhu-states-rejects.csv ../rejects.csv
-      """
+        make -B data-products/$INPUTPREFIX.csv \
+          data-products/$INPUTPREFIX-rejects.csv && \
+        mv data-products/$INPUTPREFIX.csv ../data.csv && \
+        mv data-products/$INPUTPREFIX-rejects.csv ../rejects.csv
+      '''
     else 
-      """
+      '''
+      INPUTPREFIX=jhu-states!{params.splicedate ? "-spliced-" + params.splicedate : ""}
+
       echo "Not using time machine; pulling latest data"
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
-        make -B data-products/jhu-states.csv data-products/jhu-states-rejects.csv && \
-        mv data-products/jhu-states.csv ../data.csv && \
-        mv data-products/jhu-states-rejects.csv ../rejects.csv
-      """
+        make -B data-products/$INPUTPREFIX.csv \
+          data-products/$INPUTPREFIX-rejects.csv && \
+        mv data-products/$INPUTPREFIX.csv ../data.csv && \
+        mv data-products/$INPUTPREFIX-rejects.csv ../rejects.csv
+      '''
 }
 

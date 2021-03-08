@@ -14,6 +14,9 @@ params.branch       = "latest" // Branch of model to run - must be on Docker Hub
 params.key          = "fips"   // "fips" for county runs, "state" for state runs
 params.raw          = false    // Output raw `covidestim-result` object as .RDS?
 params.s3pub        = false    // Don't upload to S3 by default
+params.splicedate   = false    // By default, don't do any custom date splicing
+                               //   for state-level runs. This still means that
+                               //   CTP data will prefill JHU data.
 
 include {jhuData; jhuStateData} from './src/inputs'
 include {filterTestTracts; splitTractData} from './src/inputs-utils'
