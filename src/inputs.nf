@@ -25,7 +25,7 @@ process ctpData {
       git clone https://github.com/covidestim/covidestim-sources && \
       cd covidestim-sources && \
       make -B data-products/covidtracking-smoothed-clipped-!{params.timemachine}.csv && \
-      mv data-products/covidtracking-smoothed.csv-clipped-!{params.timemachine}.csv ../data.csv
+      mv data-products/covidtracking-smoothed-clipped-!{params.timemachine}.csv ../data.csv
 
       echo 'state,code,reason' > ../rejects.csv
       """
