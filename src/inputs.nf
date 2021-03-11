@@ -18,14 +18,24 @@ process ctpData {
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
-    """
-    git clone https://github.com/covidestim/covidestim-sources && \
-    cd covidestim-sources && \
-    make -B data-products/covidtracking-smoothed.csv && \
-    mv data-products/covidtracking-smoothed.csv ../data.csv
+    if (params.timemachine != false)
+      """
+      git clone https://github.com/covidestim/covidestim-sources && \
+      cd covidestim-sources && \
+      make -B data-products/covidtracking-smoothed-clipped-!{params.timemachine}.csv && \
+      mv data-products/covidtracking-smoothed.csv-clipped-!{params.timemachine}.csv ../data.csv
 
-    echo 'state,code,reason' > ../rejects.csv
-    """
+      echo 'state,code,reason' > ../rejects.csv
+      """
+    else
+      """
+      git clone https://github.com/covidestim/covidestim-sources && \
+      cd covidestim-sources && \
+      make -B data-products/covidtracking-smoothed.csv && \
+      mv data-products/covidtracking-smoothed.csv ../data.csv
+
+      echo 'state,code,reason' > ../rejects.csv
+      """
 }
 
 process jhuData {
@@ -68,6 +78,49 @@ process jhuData {
         make -B data-products/jhu-counties.csv data-products/jhu-counties-rejects.csv && \
         mv data-products/jhu-counties.csv ../data.csv && \
         mv data-products/jhu-counties-rejects.csv ../rejects.csv
+      """
+}
+
+process nytData {
+    container 'rocker/tidyverse' // Name of singularity+docker container
+
+    // Retry once in case of HTTP errors, before giving up
+    errorStrategy 'retry'
+    maxRetries 1
+    time '15m'
+
+    output:
+      path 'data.csv',    emit: data
+      path 'rejects.csv', emit: rejects
+
+    // Clone the 'covidestim-sources' repository, and use it to generate
+    // the input data for the model
+    shell:
+
+    if (params.timemachine != false)
+      """
+      echo "Using time machine ending on date !{params.timemachine}"
+      git clone https://github.com/covidestim/covidestim-sources && \
+        cd covidestim-sources && \
+        git submodule init && \
+        git submodule update --remote data-sources/nytimes-data && \
+        cd data-sources/nytimes-data && \
+        git log -1 --before !{params.timemachine}T06:00:00Z --pretty=%h | xargs git checkout && \
+        cd ../.. && \
+        make -B data-products/nytimes-counties.csv data-products/nytimes-counties-rejects.csv && \
+        mv data-products/nytimes-counties.csv ../data.csv && \
+        mv data-products/nytimes-counties-rejects.csv ../rejects.csv
+      """
+    else 
+      """
+      echo "Not using time machine; pulling latest data"
+      git clone https://github.com/covidestim/covidestim-sources && \
+        cd covidestim-sources && \
+        git submodule init && \
+        git submodule update --depth 1 --remote data-sources/nytimes-data && \
+        make -B data-products/nytimes-counties.csv data-products/nytimes-counties-rejects.csv && \
+        mv data-products/nytimes-counties.csv ../data.csv && \
+        mv data-products/nytimes-counties-rejects.csv ../rejects.csv
       """
 }
 

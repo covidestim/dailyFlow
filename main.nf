@@ -18,7 +18,7 @@ params.splicedate   = false    // By default, don't do any custom date splicing
                                //   for state-level runs. This still means that
                                //   CTP data will prefill JHU data.
 
-include {jhuData; jhuStateData} from './src/inputs'
+include {ctpData; nytData} from './src/inputs'
 include {filterTestTracts; splitTractData} from './src/inputs-utils'
 include {runTractSampler; runTractOptimizer} from './src/modelrunners'
 include {publishStateResults; publishCountyResults} from './src/outputs'
@@ -34,7 +34,7 @@ def collectCSVs(chan, fname) {
 
 workflow {
 main:
-    generateData = params.key == "fips" ? jhuData : jhuStateData
+    generateData = params.key == "fips" ? nytData : ctpData
 
     runner = ""
 
@@ -67,13 +67,13 @@ main:
     }
 
     if (params.key == "fips") {
-        input   = jhuData.out.data
-        rejects = jhuData.out.rejects
+        input   = nytData.out.data
+        rejects = nytData.out.rejects
 
         publishCountyResults(summary, input, rejects, warning, optvals)
     } else {
-        input   = jhuStateData.out.data
-        rejects = jhuStateData.out.rejects
+        input   = ctpData.out.data
+        rejects = ctpData.out.rejects
 
         publishStateResults(summary, input, rejects, warning, optvals, method)
     }
