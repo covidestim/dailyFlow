@@ -18,6 +18,8 @@ process ctpData {
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
+    shell:
+
     if (params.timemachine != false)
       """
       git clone https://github.com/covidestim/covidestim-sources && \
