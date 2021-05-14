@@ -83,6 +83,10 @@ Specifies the main workflow and the default Nextflow parameters. The main workfl
 
 `main.nf` references several processes which are defined in the `src/` directory: `jhuData`, `jhuStateData`, `runTractSampler`, `runTractOptimizer`, and auxillary processes `filterTestTracts`, `splitTractData`, `publishCountyResults`, `publishStateResults`.
 
+### `runYCRC-state.sh`/`runYCRC-counties.sh`
+
+Example Bash scripts for running the model on a SLURM-based cluster
+
 ### process `jhuData`
 
 This is identical to `ctpData`, except that it cleans Johns Hopkins CSSE data at the county level. Since `covidestim-sources` references the JHU Git repo as a submodule, there are additional Git commands to bring the JHU submodule up to its `HEAD` commit on `origin/master`.
