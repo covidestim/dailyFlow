@@ -18,7 +18,7 @@ Nextflow takes care of:
 
 **How do I change the number of attempts, and their length?**
 
-Change `nextflow.config` by modifying `testFast`, `states`, `statesAggressive`, or `counties` to have a differentt value for `params.time`. Alternatively, write your own profile in addittion to the ones mentioned above.
+Change `nextflow.config` by modifying `testFast`, `states`, `statesAggressive`, or `counties` to have a different value for `params.time`. Alternatively, write your own profile in addition to the ones mentioned above.
 
 **How do I change how Stan is invoked?**
 
