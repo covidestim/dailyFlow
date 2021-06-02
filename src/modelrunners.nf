@@ -82,12 +82,6 @@ process runTractSampler {
       run_summary <- summary(result$result)
       warnings    <- result$warnings
 
-      # Error on treedepth warning, or any divergent transitions warning
-      # indicating >= 10 divergent transitions
-      if (any(str_detect(warnings, 'treedepth')) ||
-          any(str_detect(warnings, ' [0-9]{2,} divergent')))
-        quit(status=1)
-
       return(list(
         run_summary = bind_cols(!{params.key} = region, run_summary),
         warnings    = bind_cols(!{params.key} = region, warnings = warnings),
