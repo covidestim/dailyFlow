@@ -59,23 +59,6 @@ process runTractSampler {
         input_cases(d_cases) + input_deaths(d_deaths)
 
       print(cfg)
-      resultOptimizer <- runnerOptimizer(cfg, cores = 1, tries = 10)
-   
-      run_summary <- summary(resultOptimizer$result)
-      warnings    <- resultOptimizer$warnings
-      opt_vals    <- resultOptimizer$result$opt_vals
-
-      # If it's the last attempt
-      if ("!{task.attempt == params.time.size()}" == "true" &&
-          "!{params.alwayssample}" == "false") {
-        return(list(
-          run_summary = bind_cols(!{params.key} = region, run_summary),
-          warnings    = bind_cols(!{params.key} = region, warnings = warnings),
-          opt_vals    = bind_cols(!{params.key} = region, optvals  = opt_vals),
-          method      = bind_cols(!{params.key} = region, method   = "optimizer"),
-          raw         = resultOptimizer
-        ))
-      }
 
       result <- runner(cfg, cores = !{task.cpus})
  
