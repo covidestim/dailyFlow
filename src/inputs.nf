@@ -36,6 +36,10 @@ process jhuData {
     maxRetries 1
     time '15m'
 
+    // Currently unsure of exact memory needs. At least 300MB, but may differ
+    // substantially be cluster.
+    memory '8 GB'
+
     output:
       path 'data.csv',    emit: data
       path 'rejects.csv', emit: rejects
@@ -78,6 +82,10 @@ process jhuStateData {
     errorStrategy 'retry'
     maxRetries 1
     time '15m'
+
+    // Currently unsure of exact memory needs. At least 300MB, but may differ
+    // substantially be cluster.
+    memory '8 GB'
 
     output:
       path 'data.csv',    emit: data
