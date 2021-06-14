@@ -29,6 +29,7 @@ process splitTractData {
 
     container 'rocker/tidyverse'
     time '1h' // S3 copies take forever, probably a better way to do this
+    mem '4GB' // Unknown what it actually needs, but this is a good starting point
 
     input:
       file allTractData
