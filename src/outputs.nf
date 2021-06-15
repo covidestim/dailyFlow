@@ -1,7 +1,8 @@
 process publishCountyResults {
 
     container 'covidestim/webworker:latest'
-    time '30m'
+    time '1h'
+    memory '4GB'
 
     input:
         file allResults
@@ -54,7 +55,8 @@ process publishCountyResults {
 process publishStateResults {
 
     container 'covidestim/webworker:latest'
-    time '30m'
+    time '1h'
+    memory '4GB'
 
     input:
         file allResults
