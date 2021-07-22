@@ -125,6 +125,7 @@ process runTractOptimizer {
 
     input:
         file tractData
+        file vaccineData
     output:
         path 'summary.csv', emit: summary // DSL2 syntax
         path 'warning.csv', emit: warning
@@ -155,10 +156,13 @@ process runTractOptimizer {
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
 
-      cfg <- covidestim(ndays    = nrow(tractData),
-                        seed     = sample.int(.Machine$integer.max, 1),
-                        region   = region,
-                        pop_size = get_pop(region)) +
+      vax    <- filter(vaccineData, FIPS == region) %>% select(RR) %>% as.matrix()
+
+      cfg <- covidestim(ndays       = nrow(tractData),
+                        seed        = sample.int(.Machine$integer.max, 1),
+                        region      = region,
+                        pop_size    = get_pop(region),
+                        ifr_vac_adj = vax) +
         input_cases(d_cases) + input_deaths(d_deaths)
 
       print(cfg)
