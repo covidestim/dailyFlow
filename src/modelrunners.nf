@@ -177,7 +177,7 @@ process runTractOptimizer {
         input_vaccines(d_vax)
 
       print(cfg)
-      result <- runner(cfg, cores = 1, tries = 10)
+      result <- runner(cfg, cores = 1, tries = 30)
    
       run_summary <- summary(result$result)
       warnings    <- result$warnings
