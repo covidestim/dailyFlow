@@ -18,18 +18,14 @@
 #   to find the exact syntax
 
 date="$(date '+%Y-%m-%d')"
-branch="ifr-frozen"
-key=state
+branch="RiskSpace"
+key=fips
 
 # Targets YCRC/Grace
-nextflow run covidestim/dailyFlow \
-  -r "ifr" \
+nextflow run . \
   --s3pub false \
-  -latest \
-  -profile "local,states" \
-  -N "marcus.russi@yale.edu" \
+  -profile "local,counties" \
   --branch $branch \
   --key $key \
-  --outdir "s3://nf-test-results/ifr-state-$date" \
-  --date $date \
-  --PGCONN "$(cat SECRET_RDS_CREDENTIALS)"
+  --outdir VACCINES_TEST1 \
+  --date $date
