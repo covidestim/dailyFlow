@@ -81,7 +81,7 @@ process jhuVaxData {
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
     maxRetries 1
-    time '30m'
+    time '50m'
 
     // Currently unsure of exact memory needs. At least 300MB, but may differ
     // substantially be cluster.
