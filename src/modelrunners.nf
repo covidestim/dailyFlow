@@ -37,8 +37,11 @@ process runTractSampler {
     d <- read_csv(
       "!{tractData}",
       col_types = cols(
-        .default = col_guess(),
-        !{params.key} = col_character()
+        date = col_date(),
+        !{params.key} = col_character(),
+        cases = col_number(),
+        deaths = col_number(),
+        RR = col_number()
       )
     ) %>% group_by(!{params.key})
 
@@ -51,12 +54,15 @@ process runTractSampler {
 
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
+      d_vax    <- select(tractData, date, observation = RR)
 
       cfg <- covidestim(ndays    = nrow(tractData),
                         seed     = sample.int(.Machine$integer.max, 1),
                         region   = region,
                         pop_size = get_pop(region)) +
-        input_cases(d_cases) + input_deaths(d_deaths)
+        input_cases(d_cases) +
+        input_deaths(d_deaths) +
+        input_vaccines(d_vax)
 
       print(cfg)
       resultOptimizer <- runnerOptimizer(cfg, cores = 1, tries = 10)
@@ -125,7 +131,6 @@ process runTractOptimizer {
 
     input:
         file tractData
-        file vaccineData
     output:
         path 'summary.csv', emit: summary // DSL2 syntax
         path 'warning.csv', emit: warning
@@ -142,7 +147,13 @@ process runTractOptimizer {
 
     d <- read_csv(
       "!{tractData}",
-      col_types = cols(.default = col_guess(), !{params.key} = col_character())
+      col_types = cols(
+        date = col_date(),
+        !{params.key} = col_character(),
+        cases = col_number(),
+        deaths = col_number(),
+        RR = col_number()
+      )
     ) %>%
       group_by(!{params.key})
 
@@ -155,15 +166,15 @@ process runTractOptimizer {
 
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
+      d_vax    <- select(tractData, date, observation = RR)
 
-      vax    <- filter(vaccineData, FIPS == region) %>% select(RR) %>% as.matrix()
-
-      cfg <- covidestim(ndays       = nrow(tractData),
-                        seed        = sample.int(.Machine$integer.max, 1),
-                        region      = region,
-                        pop_size    = get_pop(region),
-                        ifr_vac_adj = vax) +
-        input_cases(d_cases) + input_deaths(d_deaths)
+      cfg <- covidestim(ndays    = nrow(tractData),
+                        seed     = sample.int(.Machine$integer.max, 1),
+                        region   = region,
+                        pop_size = get_pop(region)) +
+        input_cases(d_cases) +
+        input_deaths(d_deaths) +
+        input_vaccines(d_vax)
 
       print(cfg)
       result <- runner(cfg, cores = 1, tries = 10)
