@@ -164,6 +164,8 @@ process runTractOptimizer {
 
       region <- groupKeys[["!{params.key}"]]
 
+      print(paste0("Beginning ", region))
+
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
       d_vax    <- select(tractData, date, observation = RR)
@@ -176,11 +178,20 @@ process runTractOptimizer {
         input_deaths(d_deaths) +
         input_vaccines(d_vax)
 
+      print("Configuration:")
       print(cfg)
+
       result <- runner(cfg, cores = 1, tries = 30)
-   
+      print("Warning messages from optimizer:")
+      print(result$warnings)
+      print("Messages from optimizer:")
+      print(result$messages)
+
       run_summary <- summary(result$result)
       warnings    <- result$warnings
+
+      print("Summary:")
+      print(run_summary)
 
       list(
         run_summary = bind_cols(!{params.key} = region, run_summary),
