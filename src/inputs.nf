@@ -84,7 +84,7 @@ process jhuVaxData {
     time '50m'
 
     // Currently unsure of exact memory needs. At least 300MB, but may differ
-    // substantially be cluster.
+    // substantially by cluster (Harvard seems to need more?).
     memory '8 GB'
 
     output:

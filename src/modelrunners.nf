@@ -181,7 +181,7 @@ process runTractOptimizer {
       print("Configuration:")
       print(cfg)
 
-      result <- runner(cfg, cores = 1, tries = 30)
+      result <- runner(cfg, cores = 1, tries = 10)
       print("Warning messages from optimizer:")
       print(result$warnings)
       print("Messages from optimizer:")
