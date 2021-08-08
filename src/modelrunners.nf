@@ -113,7 +113,7 @@ process runTractOptimizer {
     cpus 1
     memory '3 GB' // Currently unsure of exact memory needs. At least 800MB
 
-    time '2h'
+    time '3h'
 
     // Files from `splitTractData` are ALWAYS named by the tract they
     // represent, i.e. state name or county FIPS. We can get the name of the
