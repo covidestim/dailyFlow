@@ -39,9 +39,7 @@ process runTractSampler {
       col_types = cols(
         date = col_date(),
         !{params.key} = col_character(),
-        cases = col_number(),
-        deaths = col_number(),
-        RR = col_number()
+        .default = col_number() # covers cases/deaths/fracpos/volume/RR
       )
     ) %>% group_by(!{params.key})
 
@@ -150,9 +148,7 @@ process runTractOptimizer {
       col_types = cols(
         date = col_date(),
         !{params.key} = col_character(),
-        cases = col_number(),
-        deaths = col_number(),
-        RR = col_number()
+        .default = col_number() # covers cases/deaths/fracpos/volume/RR
       )
     ) %>%
       group_by(!{params.key})

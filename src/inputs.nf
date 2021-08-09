@@ -76,7 +76,7 @@ process jhuData {
 }
 
 process jhuVaxData {
-    container 'covidestim/webworker' // Name of singularity+docker container
+    container 'covidestim/webworker:latest' // Name of singularity+docker container
 
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
@@ -163,6 +163,45 @@ process jhuStateData {
           data-products/$INPUTPREFIX-rejects.csv && \
         mv data-products/$INPUTPREFIX.csv ../data.csv && \
         mv data-products/$INPUTPREFIX-rejects.csv ../rejects.csv
+      '''
+}
+
+process jhuStateVaxData {
+    container 'covidestim/webworker:latest' // Name of singularity+docker container
+
+    // Retry once in case of HTTP errors, before giving up
+    errorStrategy 'retry'
+    maxRetries 1
+    time '50m'
+
+    // Currently unsure of exact memory needs. At least 300MB, but may differ
+    // substantially be cluster.
+    memory '8 GB'
+
+    output:
+      path 'data.csv',    emit: data
+      path 'rejects.csv', emit: rejects
+
+    // Clone the 'covidestim-sources' repository, and use it to generate
+    // the input data for the model
+    shell:
+
+    if (params.timemachine != false)
+      """
+      echo "Error: Cannot use timemachine for jhuStateVaxData!"
+      exit 1
+      """
+    else 
+      '''
+      echo "Not using time machine; pulling latest data"
+      git clone https://github.com/covidestim/covidestim-sources && \
+        cd covidestim-sources && \
+        git submodule init && \
+        git submodule update --depth 1 --remote data-sources/jhu-data && \
+        make -B data-products/case-death-rr-state.csv \
+          data-products/jhu-states-rejects.csv && \
+        mv data-products/case-death-rr-state.csv ../data.csv && \
+        mv data-products/jhu-states-rejects.csv ../rejects.csv
       '''
 }
 
