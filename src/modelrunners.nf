@@ -18,12 +18,13 @@ process runTractSampler {
     publishDir "$params.outdir/raw", pattern: "*.RDS", enabled: params.raw
 
     input:
-        file tractData
+        tuple val(runID), file(tractData), file(metadata)
     output:
         path 'summary.csv', emit: summary // DSL2 syntax
         path 'warning.csv', emit: warning
         path 'optvals.csv', emit: optvals
         path 'method.csv',  emit: method
+        path 'produced_metadata.json', emit: metadata
         path "${task.tag}.RDS" optional !params.raw
 
     shell:
@@ -42,6 +43,8 @@ process runTractSampler {
         .default = col_number() # covers cases/deaths/fracpos/volume/RR
       )
     ) %>% group_by(!{params.key})
+
+    metadata <- jsonlite::read_json("!{metadata}", simplifyVector = T)
 
     print("Tracts in this process:")
     print(pull(d, !{params.key}) %>% unique)
@@ -106,6 +109,8 @@ process runTractSampler {
     write_csv(purrr::map(allResults, 'opt_vals')    %>% bind_rows, 'optvals.csv')
     write_csv(purrr::map(allResults, 'method')      %>% bind_rows, 'method.csv')
 
+    jsonlite::write_json(metadata, 'produced_metadata.json', null = "null")
+
     if ("!{params.raw}" == "true")
       saveRDS(purrr::map(allResults, 'raw'), "!{task.tag}.RDS")
     '''
@@ -128,12 +133,13 @@ process runTractOptimizer {
     publishDir "$params.outdir/raw", pattern: "*.RDS", enabled: params.raw
 
     input:
-        file tractData
+        tuple val(runID), file(tractData), file(metadata)
     output:
         path 'summary.csv', emit: summary // DSL2 syntax
         path 'warning.csv', emit: warning
         path 'optvals.csv', emit: optvals
         path 'method.csv',  emit: method
+        path 'produced_metadata.json', emit: metadata
         path "${task.tag}.RDS" optional !params.raw
 
     shell:
@@ -152,6 +158,8 @@ process runTractOptimizer {
       )
     ) %>%
       group_by(!{params.key})
+
+    metadata <- jsonlite::read_json("!{metadata}", simplifyVector = T)
 
     print("Tracts in this process:")
     print(pull(d, !{params.key}) %>% unique)
@@ -202,6 +210,8 @@ process runTractOptimizer {
     write_csv(purrr::map(allResults, 'warnings')    %>% bind_rows, 'warning.csv')
     write_csv(purrr::map(allResults, 'opt_vals')    %>% bind_rows, 'optvals.csv')
     write_csv(purrr::map(allResults, 'method')      %>% bind_rows, 'method.csv')
+
+    jsonlite::write_json(metadata, 'produced_metadata.json', null = "null")
 
     if ("!{params.raw}" == "true")
       saveRDS(purrr::map(allResults, 'raw'), "!{task.tag}.RDS")

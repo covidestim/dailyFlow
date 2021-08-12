@@ -9,13 +9,17 @@ process filterTestTracts {
     input:
       file allTractData
       file rejects
+      file metadata
     output:
       path 'filtered_data.csv', emit: data
       path 'rejects.csv', emit: rejects
+      path 'produced_metadata.json', emit: metadata
 
     """
     filterTestTracts.R \
       -o filtered_data.csv \
+      --writeMetadata produced_metadata.json \
+      --metadata $metadata \
       --tracts /opt/webworker/data/test-tracts.csv \
       --key $params.key \
       $allTractData
@@ -34,7 +38,10 @@ process splitTractData {
     input:
       file allTractData
       file rejects
-    output: file '*.csv'
+      file metadata
+    output:
+      file '*.csv', emit: timeseries
+      file '*.json', emit: metadata
 
     shell:
     """
@@ -42,6 +49,8 @@ process splitTractData {
     library(tidyverse)
 
     d <- read_csv("!{allTractData}")
+
+    metadata <- jsonlite::read_json("!{metadata}", simplifyVector = T)
 
     tractsUnique <- pull(d, !{params.key}) %>% unique
 
@@ -62,6 +71,23 @@ process splitTractData {
             # Otherwise, name it after the number (index) of the group
             paste0(.y[["flight"]], ".csv")
           )
+        )
+      )
+
+    group_by(metadata, flight = tractsGrouped[!{params.key}]) %>%
+      group_walk(
+        ~jsonlite::write_json(
+          .x,
+          ifelse(
+            # If there is only one tract in this group
+            (!{params.ngroups} == 10000000) ||
+            (pull(.x, !{params.key}) %>% unique %>% length) == 1,
+            # Then name the JSON file after that tract
+            paste0(.x[["!{params.key}"]][1], ".json"),
+            # Otherwise, name it after the number (index) of the group
+            paste0(.y[["flight"]], ".json")
+          ),
+          null = 'null'
         )
       )
     """

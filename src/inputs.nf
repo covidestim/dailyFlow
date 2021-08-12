@@ -103,7 +103,7 @@ process jhuVaxData {
     else 
       """
       echo "Not using time machine; pulling latest data"
-      git clone https://github.com/covidestim/covidestim-sources && \
+      git clone --branch metadata https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
@@ -179,8 +179,9 @@ process jhuStateVaxData {
     memory '8 GB'
 
     output:
-      path 'data.csv',    emit: data
-      path 'rejects.csv', emit: rejects
+      path 'data.csv',      emit: data
+      path 'rejects.csv',   emit: rejects
+      path 'metadata.json', emit: metadata
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
@@ -194,14 +195,16 @@ process jhuStateVaxData {
     else 
       '''
       echo "Not using time machine; pulling latest data"
-      git clone https://github.com/covidestim/covidestim-sources && \
+      git clone --branch metadata https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
         make -B data-products/case-death-rr-state.csv \
-          data-products/jhu-states-rejects.csv && \
+          data-products/jhu-states-rejects.csv \
+          data-products/case-death-rr-state-metadata.json && \
         mv data-products/case-death-rr-state.csv ../data.csv && \
-        mv data-products/jhu-states-rejects.csv ../rejects.csv
+        mv data-products/jhu-states-rejects.csv ../rejects.csv && \
+        mv data-products/case-death-rr-state-metadata.json ../metadata.json
       '''
 }
 

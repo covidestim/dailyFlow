@@ -32,6 +32,21 @@ def collectCSVs(chan, fname) {
     )
 }
 
+// Joins two channels and emits a third channel of lists, of the form
+// [key, chan1Item, chan2Item]
+//
+// Assumption: chan1 and chan2 are both emitting file paths
+def joinOnSimpleName(chan1, chan2) {
+    chan1Lists = chan1.flatten().map{ [it.getSimpleName(), it] }
+    chan2Lists = chan2.flatten().map{ [it.getSimpleName(), it] }
+
+    chan1Lists.join(chan2Lists, failOnDuplicate: true, failOnMismatch: true)
+}
+
+def tupleChan(chan1, chan2) {
+    joinOnSimpleName(chan1, chan2)
+}
+
 workflow {
 main:
     // Choose which data cleaning process to use based on whether state-level
@@ -52,9 +67,11 @@ main:
     }
 
     if (params.testtracts)
-      generateData | filterTestTracts | splitTractData | flatten | take(params.n) | runTract
+      inputData = generateData | filterTestTracts | splitTractData //| flatten | take(params.n) | runTract
     else
-      generateData | splitTractData | flatten | take(params.n) | runTract
+      inputData = generateData | splitTractData // | flatten | take(params.n) | runTract
+
+    tupleChan(splitTractData.timeseries, splitTractData.metadata) | runTract
 
     // You can't refer directly to the `runTract` object for some reason, so
     // this branch is here simply to refer to the correct object when collapsing
