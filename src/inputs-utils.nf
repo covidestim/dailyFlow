@@ -40,8 +40,8 @@ process splitTractData {
       file rejects
       file metadata
     output:
-      file '*.csv', emit: timeseries
-      file '*.json', emit: metadata
+      path '*.csv', emit: timeseries
+      path '*.json', emit: metadata
 
     shell:
     """

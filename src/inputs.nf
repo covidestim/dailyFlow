@@ -88,8 +88,9 @@ process jhuVaxData {
     memory '8 GB'
 
     output:
-      path 'data.csv',    emit: data
-      path 'rejects.csv', emit: rejects
+      path 'data.csv',      emit: data
+      path 'rejects.csv',   emit: rejects
+      path 'metadata.json', emit: metadata
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
@@ -107,8 +108,11 @@ process jhuVaxData {
         cd covidestim-sources && \
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
-        make -B data-products/case-death-rr.csv data-products/jhu-counties-rejects.csv && \
+        make -B data-products/case-death-rr.csv \
+          data-products/jhu-counties-rejects.csv \
+          data-products/case-death-rr-metadata.json && \
         mv data-products/case-death-rr.csv ../data.csv && \
+        mv data-products/case-death-rr-metadata.json ../metadata.json && \
         mv data-products/jhu-counties-rejects.csv ../rejects.csv
       """
 }
