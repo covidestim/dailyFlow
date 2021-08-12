@@ -1,6 +1,6 @@
 process publishCountyResults {
 
-    container 'covidestim/webworker:latest'
+    container 'covidestim/webworker:metadata'
     time '1h'
     memory '4GB'
 
@@ -54,7 +54,7 @@ process publishCountyResults {
 
 process publishStateResults {
 
-    container 'covidestim/webworker:latest'
+    container 'covidestim/webworker:metadata'
     time '1h'
     memory '4GB'
 

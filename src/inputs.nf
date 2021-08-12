@@ -76,7 +76,7 @@ process jhuData {
 }
 
 process jhuVaxData {
-    container 'covidestim/webworker:latest' // Name of singularity+docker container
+    container 'covidestim/webworker:metadata' // Name of singularity+docker container
 
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
@@ -167,7 +167,7 @@ process jhuStateData {
 }
 
 process jhuStateVaxData {
-    container 'covidestim/webworker:latest' // Name of singularity+docker container
+    container 'covidestim/webworker:metadata' // Name of singularity+docker container
 
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
