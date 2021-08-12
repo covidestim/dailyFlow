@@ -34,10 +34,12 @@ def collectCSVs(chan, fname) {
 
 workflow {
 main:
+    // Choose which data cleaning process to use based on whether state-level
+    // or county-level data is desired
     generateData = params.key == "fips" ? jhuVaxData : jhuStateVaxData
 
+    // Rules for choosing which runner is to be used
     runner = ""
-
     if (params.alwayssample) {
       runTract = runTractSampler
       runner = "runTractSampler"
@@ -54,6 +56,10 @@ main:
     else
       generateData | splitTractData | flatten | take(params.n) | runTract
 
+    // You can't refer directly to the `runTract` object for some reason, so
+    // this branch is here simply to refer to the correct object when collapsing
+    // all of the summary/warning/optvals/method csv's into four large .csv 
+    // files.
     if (runner == "runTractOptimizer") {
         summary = collectCSVs(runTractOptimizer.out.summary, 'summary.csv')
         warning = collectCSVs(runTractOptimizer.out.warning, 'warning.csv')
@@ -66,6 +72,8 @@ main:
         method  = collectCSVs(runTractSampler.out.method,  'method.csv' )
     }
 
+    // Invoke one of the two publishing functions, which reformat the output
+    // data for web consumption/DB insertion.
     if (params.key == "fips") {
         input   = jhuVaxData.out.data
         rejects = jhuVaxData.out.rejects
@@ -78,9 +86,12 @@ main:
         publishStateResults(summary, input, rejects, warning, optvals, method)
     }
 
+    // Collect the list of rejected states or counties which were NOT run
+    // by any of the runTract* processes.
     collectCSVs(rejects, 'rejects.csv')
 
 emit:
+    // Emit the following channels as output from this workflow:
     summary = summary
     warning = warning
     optvals = optvals
