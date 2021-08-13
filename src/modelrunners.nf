@@ -167,6 +167,7 @@ process runTractOptimizer {
     allResults <- group_map(d, function(tractData, groupKeys) {
 
       region <- groupKeys[["!{params.key}"]]
+      regionMetadata <- filter(metadata, !{params.key} == region)
 
       print(paste0("Beginning ", region))
 
@@ -174,12 +175,22 @@ process runTractOptimizer {
       d_deaths <- select(tractData, date, observation = deaths)
       d_vax    <- select(tractData, date, observation = RR)
 
+      if (is.null(regionMetadata$nonReportingBegins)) {
+        inputDeaths <- input_deaths(d_deaths)
+      } else {
+        message("Clipping deaths!")
+        inputDeaths <- input_deaths(
+          d_deaths,
+          lastDeathDate = as.Date(regionMetadata$nonReportingBegins)
+        )
+      }
+
       cfg <- covidestim(ndays    = nrow(tractData),
                         seed     = sample.int(.Machine$integer.max, 1),
                         region   = region,
                         pop_size = get_pop(region)) +
         input_cases(d_cases) +
-        input_deaths(d_deaths) +
+        inputDeaths +
         input_vaccines(d_vax)
 
       print("Configuration:")
