@@ -175,7 +175,7 @@ process runTractOptimizer {
       d_deaths <- select(tractData, date, observation = deaths)
       d_vax    <- select(tractData, date, observation = RR)
 
-      if (is.null(regionMetadata$nonReportingBegins)) {
+      if (is.null(regionMetadata$nonReportingBegins) || is.na(regionMetadata$nonReportingBegins)) {
         inputDeaths <- input_deaths(d_deaths)
       } else {
         message("Clipping deaths!")
