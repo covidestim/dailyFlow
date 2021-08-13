@@ -71,7 +71,7 @@ main:
     else
       inputData = generateData | splitTractData // | flatten | take(params.n) | runTract
 
-    tupleChan(splitTractData.timeseries, splitTractData.metadata) | runTract
+    tupleChan(splitTractData.out.timeseries, splitTractData.out.metadata) | runTract
 
     // You can't refer directly to the `runTract` object for some reason, so
     // this branch is here simply to refer to the correct object when collapsing
