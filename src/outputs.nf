@@ -44,7 +44,10 @@ process publishCountyResults {
         psql -f /opt/webworker/scripts/copy_rejects.sql "$params.PGCONN"
 
       # And finally, copy the input data
+      # Note, the RR column is being ELIMINATED here because it would conflict
+      # with the schema of the api.inputs table
       tagColumnAfter 'run.date' "$params.date" < $inputData | \
+        cut -d, -f1,2,3,4,6 | \
         psql -f /opt/webworker/scripts/copy_inputs_dev.sql "$params.PGCONN"
     else
       echo "PGCONN not supplied, DB inserts skipped."
