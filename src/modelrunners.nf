@@ -7,7 +7,7 @@ process runTractSampler {
     // Retry with stepped timelimits
     time          { params.time[task.attempt - 1] }
     errorStrategy { task.attempt == params.time.size() ? 'ignore' : 'retry' }
-    maxRetries    { params.time.size() }
+    maxRetries    { params.time.size() - 1 }
 
     // Files from `splitTractData` are ALWAYS named by the tract they
     // represent, i.e. state name or county FIPS. We can get the name of the

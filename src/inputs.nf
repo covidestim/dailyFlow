@@ -34,7 +34,7 @@ process jhuData {
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
     maxRetries 1
-    time '15m'
+    time '45m'
 
     // Currently unsure of exact memory needs. At least 300MB, but may differ
     // substantially be cluster.
@@ -123,7 +123,7 @@ process jhuStateData {
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
     maxRetries 1
-    time '15m'
+    time '45m'
 
     // Currently unsure of exact memory needs. At least 300MB, but may differ
     // substantially be cluster.
