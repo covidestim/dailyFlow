@@ -76,7 +76,7 @@ process jhuData {
 }
 
 process jhuVaxData {
-    container 'covidestim/webworker:metadata' // Name of singularity+docker container
+    container 'covidestim/webworker:latest' // Name of singularity+docker container
 
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
@@ -104,7 +104,7 @@ process jhuVaxData {
     else 
       """
       echo "Not using time machine; pulling latest data"
-      git clone --branch metadata https://github.com/covidestim/covidestim-sources && \
+      git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
@@ -171,7 +171,7 @@ process jhuStateData {
 }
 
 process jhuStateVaxData {
-    container 'covidestim/webworker:metadata' // Name of singularity+docker container
+    container 'covidestim/webworker:latest' // Name of singularity+docker container
 
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
@@ -199,7 +199,7 @@ process jhuStateVaxData {
     else 
       '''
       echo "Not using time machine; pulling latest data"
-      git clone --branch metadata https://github.com/covidestim/covidestim-sources && \
+      git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \

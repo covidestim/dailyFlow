@@ -3,7 +3,7 @@
 // `.csv`s are delivered to the `runTract` process.
 process filterTestTracts {
 
-    container 'covidestim/webworker:metadata'
+    container 'covidestim/webworker:latest'
     time '10m'
 
     input:
