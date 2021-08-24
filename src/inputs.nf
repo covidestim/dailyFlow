@@ -2,32 +2,7 @@
 // 
 // Download repo `covidestim/covidestim-sources` and use its makefile to
 // generate today's copy of either county-level or state-level data. Stage this
-// data for splitting by `splitTractData`. This process uses state-level 
-// Covid Tracking Project data. The next uses Johns Hopkins' county-level data.
-process ctpData {
-    container 'rocker/tidyverse'
-
-    // Retry once in case of HTTP errors, before giving up
-    errorStrategy 'retry'
-    maxRetries 1
-    time '5m'
-
-    output:
-      path 'data.csv',    emit: data
-      path 'rejects.csv', emit: rejects
-
-    // Clone the 'covidestim-sources' repository, and use it to generate
-    // the input data for the model
-    """
-    git clone https://github.com/covidestim/covidestim-sources && \
-    cd covidestim-sources && \
-    make -B data-products/covidtracking-smoothed.csv && \
-    mv data-products/covidtracking-smoothed.csv ../data.csv
-
-    echo 'state,code,reason' > ../rejects.csv
-    """
-}
-
+// data for splitting by `splitTractData`. 
 process jhuData {
     container 'rocker/tidyverse' // Name of singularity+docker container
 
