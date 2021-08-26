@@ -18,9 +18,13 @@ params.splicedate   = false    // By default, don't do any custom date splicing
                                //   for state-level runs. This still means that
                                //   CTP data will prefill JHU data.
 
+// Where a set of backup LM objects for creating synthetic intervals resides.
+params.syntheticBackup = 's3://covidestim/synthetic-backup/backup.RDS'
+
 include {jhuVaxData; jhuStateVaxData} from './src/inputs'
 include {filterTestTracts; splitTractData} from './src/inputs-utils'
 include {runTractSampler; runTractOptimizer} from './src/modelrunners'
+include {makeSyntheticIntervals} from './src/synthetic-intervals'
 include {publishStateResults; publishCountyResults} from './src/outputs'
 
 def collectCSVs(chan, fname) {
@@ -36,15 +40,29 @@ def collectCSVs(chan, fname) {
 // [key, chan1Item, chan2Item]
 //
 // Assumption: chan1 and chan2 are both emitting file paths
-def joinOnSimpleName(chan1, chan2) {
+def tupleChan(chan1, chan2) {
     chan1Lists = chan1.flatten().map{ [it.getSimpleName(), it] }
     chan2Lists = chan2.flatten().map{ [it.getSimpleName(), it] }
 
     chan1Lists.join(chan2Lists, failOnDuplicate: true, failOnMismatch: true)
 }
 
-def tupleChan(chan1, chan2) {
-    joinOnSimpleName(chan1, chan2)
+def collectJSONs(chan, fname) {
+    def slurp = new groovy.json.JsonSlurper()
+
+    return chan.reduce( [] ) { listA, jsonFileB ->
+        def b = slurp.parse(jsonFileB)
+
+        // Returns `false` if `listA` was not modified
+        def successful = listA.addAll(b)
+
+        if (!successful)
+          throw new Exception("No items were added to accumulator")
+
+        return listA
+    }
+    .map{ it -> groovy.json.JsonOutput.toJson(it) }
+    .collectFile( name: fname, storeDir: params.outdir )
 }
 
 workflow {
@@ -79,15 +97,17 @@ main:
     // all of the summary/warning/optvals/method csv's into four large .csv 
     // files.
     if (runner == "runTractOptimizer") {
-        summary = collectCSVs(runTractOptimizer.out.summary, 'summary.csv')
-        warning = collectCSVs(runTractOptimizer.out.warning, 'warning.csv')
-        optvals = collectCSVs(runTractOptimizer.out.optvals, 'optvals.csv')
-        method  = collectCSVs(runTractOptimizer.out.method,  'method.csv' )
+        summary  = collectCSVs(runTractOptimizer.out.summary,   'summary.csv')
+        warning  = collectCSVs(runTractOptimizer.out.warning,   'warning.csv')
+        optvals  = collectCSVs(runTractOptimizer.out.optvals,   'optvals.csv')
+        method   = collectCSVs(runTractOptimizer.out.method,    'method.csv' )
+        metadata = collectJSONs(runTractOptimizer.out.metadata, 'postrun_metadata.json')
     } else {
-        summary = collectCSVs(runTractSampler.out.summary, 'summary.csv')
-        warning = collectCSVs(runTractSampler.out.warning, 'warning.csv')
-        optvals = collectCSVs(runTractSampler.out.optvals, 'optvals.csv')
-        method  = collectCSVs(runTractSampler.out.method,  'method.csv' )
+        summary  = collectCSVs(runTractSampler.out.summary,   'summary.csv')
+        warning  = collectCSVs(runTractSampler.out.warning,   'warning.csv')
+        optvals  = collectCSVs(runTractSampler.out.optvals,   'optvals.csv')
+        method   = collectCSVs(runTractSampler.out.method,    'method.csv' )
+        metadata = collectJSONs(runTractSampler.out.metadata, 'postrun_metadata.json')
     }
 
     // Invoke one of the two publishing functions, which reformat the output
@@ -96,12 +116,31 @@ main:
         input   = jhuVaxData.out.data
         rejects = jhuVaxData.out.rejects
 
-        publishCountyResults(summary, input, rejects, warning, optvals)
+        publishCountyResults(summary, input, rejects, warning, optvals, metadata)
     } else {
         input   = jhuStateVaxData.out.data
         rejects = jhuStateVaxData.out.rejects
 
-        publishStateResults(summary, input, rejects, warning, optvals, method)
+        makeSyntheticIntervals(
+            summary,
+            metadata, 
+            file(params.syntheticBackup)
+        )
+
+        summarySynthetic = collectCSVs(
+            makeSyntheticIntervals.out.summary,
+            'summary_synthetic.csv'
+        )
+
+        publishStateResults(
+            summarySynthetic,
+            input,
+            rejects,
+            warning,
+            optvals,
+            method,
+            makeSyntheticIntervals.out.metadata
+        )
     }
 
     // Collect the list of rejected states or counties which were NOT run
@@ -110,8 +149,8 @@ main:
 
 emit:
     // Emit the following channels as output from this workflow:
-    summary = summary
-    warning = warning
-    optvals = optvals
-    rejects = rejects
+    summary  = summary
+    warning  = warning
+    optvals  = optvals
+    rejects  = rejects
 }

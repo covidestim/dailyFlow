@@ -10,6 +10,7 @@ process publishCountyResults {
         file rejects
         file allWarnings
         file optVals
+        file metadata
     output:
         file 'summary.pack.gz'
         file 'estimates.csv'
@@ -43,6 +44,11 @@ process publishCountyResults {
       tagColumnBefore 'run.date' "$params.date" < $rejects | \
         psql -f /opt/webworker/scripts/copy_rejects.sql "$params.PGCONN"
 
+      # Copy all metadata
+      jq --arg date "$params.date" -r \
+        'map([.fips, \$date, (. | tojson)] | @tsv) | .[]' < $metadata | \
+        psql -f /opt/webworker/scripts/copy_county_run_info.sql "$params.PGCONN"
+
       # And finally, copy the input data
       # Note, the RR column is being ELIMINATED here because it would conflict
       # with the schema of the api.inputs table
@@ -68,6 +74,7 @@ process publishStateResults {
         file warning
         file optVals
         file method
+        file metadata
     output:
         file 'summary.pack.gz'
         file 'estimates.csv'
@@ -100,6 +107,10 @@ process publishStateResults {
       tagColumnBefore 'run.date' "$params.date" < $rejects | \
         psql -f /opt/webworker/scripts/copy_state_rejects.sql "$params.PGCONN"
 
+      # Copy all metadata
+      jq --arg date "$params.date" -r \
+        'map([.state, \$date, (. | tojson)] | @tsv) | .[]' < $metadata | \
+        psql -f /opt/webworker/scripts/copy_state_run_info.sql "$params.PGCONN"
     else
       echo "PGCONN not supplied, DB inserts skipped."
     fi
