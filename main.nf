@@ -141,6 +141,8 @@ main:
             method,
             makeSyntheticIntervals.out.metadata
         )
+
+        final_metadata = collectJSONs(makeSyntheticIntervals.out.metadata, 'final_metadata.json')
     }
 
     // Collect the list of rejected states or counties which were NOT run
