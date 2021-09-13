@@ -107,10 +107,19 @@ process publishStateResults {
       tagColumnBefore 'run.date' "$params.date" < $rejects | \
         psql -f /opt/webworker/scripts/copy_state_rejects.sql "$params.PGCONN"
 
-      # Copy all metadata
+      # Copy all metadata. The `jq` call is transforming the JSON metadata
+      # into TSV, which allows a "state" and "date" to be associated with
+      # each JSON record.
       jq --arg date "$params.date" -r \
         'map([.state, \$date, (. | tojson)] | @tsv) | .[]' < $metadata | \
         psql -f /opt/webworker/scripts/copy_state_run_info.sql "$params.PGCONN"
+
+      # And finally, copy the input data
+      # Note, the fracpos,volume,RR columns are being ELIMINATED here because
+      # it would conflict with the schema of the api.state_input_data table
+      tagColumnAfter 'run.date' "$params.date" < $inputData | \
+        cut -d, -f1,2,3,4,8 | \
+        psql -f /opt/webworker/scripts/copy_state_input_data.sql "$params.PGCONN"
     else
       echo "PGCONN not supplied, DB inserts skipped."
     fi
