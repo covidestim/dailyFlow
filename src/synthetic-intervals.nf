@@ -15,7 +15,7 @@ process makeSyntheticIntervals {
       path 'produced_metadata.json', emit: metadata
       path 'backup.RDS' optional true
 
-    publishDir "$params.webdir/synthetic-backup", enabled: params.s3pub, pattern: 'newBackup.RDS*', saveAs: { 'backup.RDS' }
+    publishDir "$params.webdir/synthetic-backup", enabled: params.s3pub, pattern: 'newBackup.RDS', saveAs: { 'backup.RDS' }
 
     """
     makeSyntheticIntervals.R \
