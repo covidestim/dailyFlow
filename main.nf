@@ -21,7 +21,7 @@ params.splicedate   = false    // By default, don't do any custom date splicing
 // Where a set of backup LM objects for creating synthetic intervals resides.
 params.syntheticBackup = 's3://covidestim/synthetic-backup/backup.RDS'
 
-include {jhuVaxData; jhuStateVaxData} from './src/inputs'
+include {combinedVaxData; jhuStateVaxData} from './src/inputs'
 include {filterTestTracts; splitTractData} from './src/inputs-utils'
 include {runTractSampler; runTractOptimizer} from './src/modelrunners'
 include {makeSyntheticIntervals} from './src/synthetic-intervals'
@@ -69,7 +69,7 @@ workflow {
 main:
     // Choose which data cleaning process to use based on whether state-level
     // or county-level data is desired
-    generateData = params.key == "fips" ? jhuVaxData : jhuStateVaxData
+    generateData = params.key == "fips" ? combinedVaxData : jhuStateVaxData
 
     // Rules for choosing which runner is to be used
     runner = ""
@@ -113,8 +113,8 @@ main:
     // Invoke one of the two publishing functions, which reformat the output
     // data for web consumption/DB insertion.
     if (params.key == "fips") {
-        input   = jhuVaxData.out.data
-        rejects = jhuVaxData.out.rejects
+        input   = combinedVaxData.out.data
+        rejects = combinedVaxData.out.rejects
 
         publishCountyResults(summary, input, rejects, warning, optvals, metadata)
     } else {

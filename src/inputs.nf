@@ -1,9 +1,9 @@
-// The first two processes generate either county- or state-level data.
+// These two processes generate either county- or state-level data.
 // 
 // Download repo `covidestim/covidestim-sources` and use its makefile to
 // generate today's copy of either county-level or state-level data. Stage this
 // data for splitting by `splitTractData`. 
-process jhuVaxData {
+process combinedVaxData {
     container 'covidestim/webworker:latest' // Name of singularity+docker container
 
     // Retry once in case of HTTP errors, before giving up
@@ -26,22 +26,27 @@ process jhuVaxData {
 
     if (params.timemachine != false)
       """
-      echo "Error: Cannot use timemachine for jhuVaxData!"
+      echo "Error: Cannot use timemachine for combinedVaxData!"
       exit 1
       """
     else 
       """
+      # WARNING!!!!!!
+      #              REMEMBER TO REMOVE `GIT CHECKOUT` BEFORE MERGING TO MASTER
+      # /WARNING!!!!!!
       echo "Not using time machine; pulling latest data"
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
+        git checkout immunity && \
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
+        git submodule update --depth 1 --remote data-sources/nytimes-data && \
         make -B data-products/case-death-rr.csv \
-          data-products/jhu-counties-rejects.csv \
+          data-products/combined-counties-rejects.csv \
           data-products/case-death-rr-metadata.json && \
         mv data-products/case-death-rr.csv ../data.csv && \
         mv data-products/case-death-rr-metadata.json ../metadata.json && \
-        mv data-products/jhu-counties-rejects.csv ../rejects.csv
+        mv data-products/combined-counties-rejects.csv ../rejects.csv
       """
 
     stub:
