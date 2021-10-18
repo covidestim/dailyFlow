@@ -40,7 +40,7 @@ process runTractSampler {
       col_types = cols(
         date = col_date(),
         !{params.key} = col_character(),
-        .default = col_number() # covers cases/deaths/fracpos/volume/RR
+        .default = col_number() # covers cases/deaths/fracpos/volume/RR/vaccinated
       )
     ) %>% group_by(!{params.key})
 
@@ -55,7 +55,8 @@ process runTractSampler {
 
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
-      d_vax    <- select(tractData, date, observation = RR)
+      d_rr    <- select(tractData, date, observation = RR)
+      d_vaccinated <- select(tractData, date, observation = vaccinated)
 
       cfg <- covidestim(ndays    = nrow(tractData),
                         seed     = sample.int(.Machine$integer.max, 1),
@@ -63,7 +64,8 @@ process runTractSampler {
                         pop_size = get_pop(region)) +
         input_cases(d_cases) +
         input_deaths(d_deaths) +
-        input_vaccines(d_vax)
+        input_rr(d_rr) +
+        input_vaccinations(d_vaccinated)
 
       print(cfg)
       resultOptimizer <- runnerOptimizer(cfg, cores = 1, tries = 10)
@@ -157,7 +159,7 @@ process runTractOptimizer {
       col_types = cols(
         date = col_date(),
         !{params.key} = col_character(),
-        .default = col_number() # covers cases/deaths/fracpos/volume/RR
+        .default = col_number() # covers cases/deaths/fracpos/volume/RR/vaccinated
       )
     ) %>%
       group_by(!{params.key})
@@ -176,7 +178,8 @@ process runTractOptimizer {
 
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
-      d_vax    <- select(tractData, date, observation = RR)
+      d_rr    <- select(tractData, date, observation = RR)
+      d_vaccinated <- select(tractData, date, observation = vaccinated)
 
       if (is.null(regionMetadata$nonReportingBegins) || is.na(regionMetadata$nonReportingBegins)) {
         inputDeaths <- input_deaths(d_deaths)
@@ -194,7 +197,8 @@ process runTractOptimizer {
                         pop_size = get_pop(region)) +
         input_cases(d_cases) +
         inputDeaths +
-        input_vaccines(d_vax)
+        input_rr(d_rr) +
+        input_vaccinations(d_vaccinated)
 
       print("Configuration:")
       print(cfg)
