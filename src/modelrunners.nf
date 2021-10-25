@@ -61,7 +61,8 @@ process runTractSampler {
       cfg <- covidestim(ndays    = nrow(tractData),
                         seed     = sample.int(.Machine$integer.max, 1),
                         region   = region,
-                        pop_size = get_pop(region)) +
+                        pop_size = get_pop(region),
+                        pop_under12  = get_pop_under12(region)) +
         input_cases(d_cases) +
         input_deaths(d_deaths) +
         input_rr(d_rr) +
@@ -194,7 +195,8 @@ process runTractOptimizer {
       cfg <- covidestim(ndays    = nrow(tractData),
                         seed     = sample.int(.Machine$integer.max, 1),
                         region   = region,
-                        pop_size = get_pop(region)) +
+                        pop_size = get_pop(region),
+                        pop_under12  = get_pop_under12(region)) +
         input_cases(d_cases) +
         inputDeaths +
         input_rr(d_rr) +
