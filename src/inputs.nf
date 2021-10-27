@@ -45,11 +45,11 @@ process combinedVaxData {
         cd data-sources/gtown-vax && \
         git checkout db2f126b379098d190b73342ba9e33160ab6c7fe && \
         cd ../.. && \
-        make -B data-products/case-death-rr.csv \
+        make -B data-products/case-death-rr-vax.csv \
           data-products/combined-counties-rejects.csv \
-          data-products/case-death-rr-metadata.json && \
-        mv data-products/case-death-rr.csv ../data.csv && \
-        mv data-products/case-death-rr-metadata.json ../metadata.json && \
+          data-products/case-death-rr-vax-metadata.json && \
+        mv data-products/case-death-rr-vax.csv ../data.csv && \
+        mv data-products/case-death-rr-vax-metadata.json ../metadata.json && \
         mv data-products/combined-counties-rejects.csv ../rejects.csv
       """
 

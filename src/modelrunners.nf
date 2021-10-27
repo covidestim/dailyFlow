@@ -179,9 +179,9 @@ process runTractOptimizer {
 
       print(paste0("Beginning ", region))
 
-      d_cases  <- select(tractData, date, observation = cases)
-      d_deaths <- select(tractData, date, observation = deaths)
-      d_rr    <- select(tractData, date, observation = RR)
+      d_cases      <- select(tractData, date, observation = cases)
+      d_deaths     <- select(tractData, date, observation = deaths)
+      d_rr         <- select(tractData, date, observation = RR)
       d_vaccinated <- select(tractData, date, observation = vaccinated)
 
       if (is.null(regionMetadata$nonReportingBegins) || is.na(regionMetadata$nonReportingBegins)) {
