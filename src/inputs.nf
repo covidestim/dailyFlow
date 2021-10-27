@@ -4,7 +4,7 @@
 // generate today's copy of either county-level or state-level data. Stage this
 // data for splitting by `splitTractData`. 
 process combinedVaxData {
-    container 'covidestim/webworker:latest' // Name of singularity+docker container
+    container 'covidestim/webworker:immunity' // Name of singularity+docker container
 
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
@@ -65,7 +65,7 @@ process combinedVaxData {
 }
 
 process jhuStateVaxData {
-    container 'covidestim/webworker:latest' // Name of singularity+docker container
+    container 'covidestim/webworker:immunity' // Name of singularity+docker container
 
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'

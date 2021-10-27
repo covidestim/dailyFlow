@@ -3,7 +3,7 @@
 // `.csv`s are delivered to the `runTract` process.
 process makeSyntheticIntervals {
 
-    container 'covidestim/webworker:latest'
+    container 'covidestim/webworker:immunity'
     time '10m'
 
     input:
