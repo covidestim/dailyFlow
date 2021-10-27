@@ -41,6 +41,10 @@ process combinedVaxData {
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
         git submodule update --depth 1 --remote data-sources/nytimes-data && \
+        git submodule update --depth 1 --remote data-sources/gtown-vax && \
+        cd data-sources/gtown-vax && \
+        git checkout db2f126b379098d190b73342ba9e33160ab6c7fe && \
+        cd ../.. && \
         make -B data-products/case-death-rr.csv \
           data-products/combined-counties-rejects.csv \
           data-products/case-death-rr-metadata.json && \
@@ -93,6 +97,10 @@ process jhuStateVaxData {
         cd covidestim-sources && \
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
+        git submodule update --depth 1 --remote data-sources/gtown-vax && \
+        cd data-sources/gtown-vax && \
+        git checkout db2f126b379098d190b73342ba9e33160ab6c7fe && \
+        cd ../.. && \
         make -B data-products/case-death-rr-state.csv \
           data-products/jhu-states-rejects.csv \
           data-products/case-death-rr-state-metadata.json && \
