@@ -33,15 +33,17 @@ process combinedVaxData {
       """
       # WARNING!!!!!!
       #              REMEMBER TO REMOVE `GIT CHECKOUT` BEFORE MERGING TO MASTER
+      #              AND RE-ADD --DEPTH 1 TO GIT SUBMODULE UPDATE
       # /WARNING!!!!!!
       echo "Not using time machine; pulling latest data"
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
         git checkout immunity && \
         git submodule init && \
+        git pull --recurse-submodules origin immunity && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
         git submodule update --depth 1 --remote data-sources/nytimes-data && \
-        git submodule update --depth 1 --remote data-sources/gtown-vax && \
+        git submodule update --remote data-sources/gtown-vax && \
         cd data-sources/gtown-vax && \
         git checkout db2f126b379098d190b73342ba9e33160ab6c7fe && \
         cd ../.. && \
@@ -96,8 +98,10 @@ process jhuStateVaxData {
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
         git submodule init && \
+        git pull --recurse-submodules origin immunity && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
-        git submodule update --depth 1 --remote data-sources/gtown-vax && \
+        git submodule update --depth 1 --remote data-sources/nytimes-data && \
+        git submodule update --remote data-sources/gtown-vax && \
         cd data-sources/gtown-vax && \
         git checkout db2f126b379098d190b73342ba9e33160ab6c7fe && \
         cd ../.. && \

@@ -18,7 +18,7 @@
 #   to find the exact syntax
 
 date="$(date '+%Y-%m-%d')"
-branch="RiskSpace"
+branch="immunity"
 key=fips
 
 # Targets YCRC/Grace
@@ -27,5 +27,6 @@ nextflow run . \
   -profile "local,counties" \
   --branch $branch \
   --key $key \
-  --outdir VACCINES_TEST1 \
-  --date $date
+  --outdir IMMUNITY_TEST1 \
+  --date $date \
+  --n 2
