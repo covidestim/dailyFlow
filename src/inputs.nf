@@ -40,19 +40,15 @@ process combinedVaxData {
         cd covidestim-sources && \
         git checkout immunity && \
         git submodule init && \
-        git pull --recurse-submodules origin immunity && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
         git submodule update --depth 1 --remote data-sources/nytimes-data && \
-        git submodule update --remote data-sources/gtown-vax && \
-        cd data-sources/gtown-vax && \
-        git checkout db2f126b379098d190b73342ba9e33160ab6c7fe && \
-        cd ../.. && \
+        git submodule update --depth 1 --remote data-sources/gtown-vax && \
         make -B data-products/case-death-rr-vax.csv \
-          data-products/combined-counties-rejects.csv \
+          data-products/case-death-rr-vax-rejects.csv \
           data-products/case-death-rr-vax-metadata.json && \
         mv data-products/case-death-rr-vax.csv ../data.csv && \
         mv data-products/case-death-rr-vax-metadata.json ../metadata.json && \
-        mv data-products/combined-counties-rejects.csv ../rejects.csv
+        mv data-products/case-death-rr-vax-rejects.csv ../rejects.csv
       """
 
     stub:
@@ -98,19 +94,15 @@ process jhuStateVaxData {
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
         git submodule init && \
-        git pull --recurse-submodules origin immunity && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
         git submodule update --depth 1 --remote data-sources/nytimes-data && \
-        git submodule update --remote data-sources/gtown-vax && \
-        cd data-sources/gtown-vax && \
-        git checkout db2f126b379098d190b73342ba9e33160ab6c7fe && \
-        cd ../.. && \
-        make -B data-products/case-death-rr-state.csv \
-          data-products/jhu-states-rejects.csv \
-          data-products/case-death-rr-state-metadata.json && \
-        mv data-products/case-death-rr-state.csv ../data.csv && \
-        mv data-products/jhu-states-rejects.csv ../rejects.csv && \
-        mv data-products/case-death-rr-state-metadata.json ../metadata.json
+        git submodule update --depth 1 --remote data-sources/gtown-vax && \
+        make -B data-products/case-death-rr-vax-state.csv \
+                data-products/case-death-rr-vax-state-rejects.csv \
+                data-products/case-death-rr-vax-state-metadata.json && \
+        mv data-products/case-death-rr-vax-state.csv           ../data.csv && \
+        mv data-products/case-death-rr-vax-state-rejects.csv   ../rejects.csv && \
+        mv data-products/case-death-rr-vax-state-metadata.json ../metadata.json
       '''
 
     stub:
