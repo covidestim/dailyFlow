@@ -116,3 +116,57 @@ process jhuStateVaxData {
     """
 }
 
+process fayetteVaxData {
+    container 'covidestim/webworker:immunity' // Name of singularity+docker container
+
+    // Retry once in case of HTTP errors, before giving up
+    errorStrategy 'retry'
+    maxRetries 1
+    time '10m'
+
+    // Currently unsure of exact memory needs. At least 300MB, but may differ
+    // substantially by cluster (Harvard seems to need more?).
+    memory '4 GB'
+
+    output:
+      path 'data.csv',      emit: data
+      path 'rejects.csv',   emit: rejects
+      path 'metadata.json', emit: metadata
+
+    shell:
+    """
+    wget "https://covidestim.s3.amazonaws.com/fayette-inputs.tar.gz" && \
+      tar -xzvf fayette-inputs.tar.gz && \
+      mv case-death-rr-vax.csv data.csv && \
+      mv case-death-rr-metadata.json metadata.json && \
+      mv case-death-rr-vax-rejects.csv rejects.csv
+    """
+}
+
+process fayetteStateVaxData {
+    container 'covidestim/webworker:immunity' // Name of singularity+docker container
+
+    // Retry once in case of HTTP errors, before giving up
+    errorStrategy 'retry'
+    maxRetries 1
+    time '10m'
+
+    // Currently unsure of exact memory needs. At least 300MB, but may differ
+    // substantially by cluster (Harvard seems to need more?).
+    memory '4 GB'
+
+    output:
+      path 'data.csv',      emit: data
+      path 'rejects.csv',   emit: rejects
+      path 'metadata.json', emit: metadata
+
+    shell:
+    """
+    curl "https://covidestim.s3.amazonaws.com/fayette-inputs.tar.gz" && \
+      tar -xzvf fayette-inputs.tar.gz && \
+      mv case-death-rr-vax-state.csv data.csv && \
+      mv case-death-rr-state-metadata.json metadata.json && \
+      mv case-death-rr-vax-state-rejects.csv rejects.csv
+    """
+}
+
