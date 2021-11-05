@@ -162,7 +162,7 @@ process fayetteStateVaxData {
 
     shell:
     """
-    curl "https://covidestim.s3.amazonaws.com/fayette-inputs.tar.gz" && \
+    wget "https://covidestim.s3.amazonaws.com/fayette-inputs.tar.gz" && \
       tar -xzvf fayette-inputs.tar.gz && \
       mv case-death-rr-vax-state.csv data.csv && \
       mv case-death-rr-state-metadata.json metadata.json && \
