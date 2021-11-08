@@ -18,22 +18,19 @@
 #   to find the exact syntax
 
 date="$(date '+%Y-%m-%d')"
-branch="master"
+branch="immunity"
 key=fips
 
 module load awscli
 
 # Targets YCRC/Grace
-nextflow run covidestim/dailyFlow \
-  -r "master" \
-  --s3pub true \
-  -latest \
+nextflow run . \
+  --s3pub false \
   --ngroups 150 \
   -profile "slurm,counties,farnam" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
   --raw false \
   --key $key \
-  --outdir "s3://nf-test-results/$date" \
-  --date $date \
-  --PGCONN "$(cat SECRET_RDS_CREDENTIALS)"
+  --outdir v0 \
+  --date $date

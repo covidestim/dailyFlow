@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH --time=720
+#SBATCH --time=30
 #SBATCH --mail-user=marcus.russi@yale.edu
 #SBATCH --mail-type=ALL
 
@@ -18,21 +18,18 @@
 #   to find the exact syntax
 
 date="$(date '+%Y-%m-%d')"
-branch="master"
+branch="immunity"
 key=state
 
 module load awscli
 
 # Targets YCRC/Grace
-nextflow run covidestim/dailyFlow \
-  -r "master" \
-  --s3pub true \
-  -latest \
+nextflow run . \
+  --s3pub false \
   -profile "slurm,states,farnam" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
-  --raw false \
+  --raw true \
   --key $key \
-  --outdir "s3://nf-test-results/$date-state" \
-  --date $date \
-  --PGCONN "$(cat SECRET_RDS_CREDENTIALS)"
+  --outdir v0-state \
+  --date $date
