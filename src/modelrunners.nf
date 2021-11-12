@@ -71,34 +71,13 @@ process runTractSampler {
         input_vaccinations(d_vaccinated)
 
       print(cfg)
-      resultOptimizer <- runnerOptimizer(cfg, cores = 1, tries = 10)
    
-      run_summary <- summary(resultOptimizer$result)
-      warnings    <- resultOptimizer$warnings
-      opt_vals    <- resultOptimizer$result$opt_vals
-
-      # If it's the last attempt
-      if ("!{task.attempt == params.time.size()}" == "true" &&
-          "!{params.alwayssample}" == "false") {
-        return(list(
-          run_summary = bind_cols(!{params.key} = region, run_summary),
-          warnings    = bind_cols(!{params.key} = region, warnings = warnings),
-          opt_vals    = bind_cols(!{params.key} = region, optvals  = opt_vals),
-          method      = bind_cols(!{params.key} = region, method   = "optimizer"),
-          raw         = resultOptimizer
-        ))
-      }
-
       result <- runner(cfg, cores = !{task.cpus})
+
+      message("Finished sampled run")
  
       run_summary <- summary(result$result)
       warnings    <- result$warnings
-
-      # Error on treedepth warning, or any divergent transitions warning
-      # indicating >= 10 divergent transitions
-      if (any(str_detect(warnings, 'treedepth')) ||
-          any(str_detect(warnings, ' [0-9]{2,} divergent')))
-        quit(status=1)
 
       return(list(
         run_summary = bind_cols(!{params.key} = region, run_summary),
