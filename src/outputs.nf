@@ -120,6 +120,9 @@ process publishStateResults {
       tagColumnAfter 'run.date' "$params.date" < $inputData | \
         cut -d, -f1,2,3,4,8 | \
         psql -f /opt/webworker/scripts/copy_state_input_data.sql "$params.PGCONN"
+
+      # Now, refresh the `api.state_performance` view
+      psql -c "REFRESH MATERIALIZED VIEW api.state_performance" "$params.PGCONN"
     else
       echo "PGCONN not supplied, DB inserts skipped."
     fi
