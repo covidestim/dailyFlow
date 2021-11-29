@@ -10,7 +10,7 @@ params.alwayssample = false    // By default, fall back to the optimizer for sta
 params.alwaysoptimize = false  // By default, use the sampler for states
 params.n            = -1       // By default, run all tracts
 params.ngroups      = 10000000 // By default, each tract gets its own NF process
-params.branch       = "latest" // Branch of model to run - must be on Docker Hub
+params.branch       = "manuscript-fall-2021" // Branch of model to run - must be on Docker Hub
 params.key          = "fips"   // "fips" for county runs, "state" for state runs
 params.raw          = false    // Output raw `covidestim-result` object as .RDS?
 params.s3pub        = false    // Don't upload to S3 by default
@@ -18,7 +18,7 @@ params.splicedate   = false    // By default, don't do any custom date splicing
                                //   for state-level runs. This still means that
                                //   CTP data will prefill JHU data.
 
-include {jhuData; jhuStateData} from './src/inputs'
+include {staticManuscriptData; staticManuscriptStateData} from './src/inputs'
 include {filterTestTracts; splitTractData} from './src/inputs-utils'
 include {runTractSampler; runTractOptimizer} from './src/modelrunners'
 include {publishStateResults; publishCountyResults} from './src/outputs'
@@ -34,7 +34,7 @@ def collectCSVs(chan, fname) {
 
 workflow {
 main:
-    generateData = params.key == "fips" ? jhuData : jhuStateData
+    generateData = params.key == "fips" ? staticManuscriptData : staticManuscriptStateData
 
     runner = ""
 
@@ -67,13 +67,13 @@ main:
     }
 
     if (params.key == "fips") {
-        input   = jhuData.out.data
-        rejects = jhuData.out.rejects
+        input   = staticManuscriptData.out.data
+        rejects = staticManuscriptData.out.rejects
 
         publishCountyResults(summary, input, rejects, warning, optvals)
     } else {
-        input   = jhuStateData.out.data
-        rejects = jhuStateData.out.rejects
+        input   = staticManuscriptStateData.out.data
+        rejects = staticManuscriptStateData.out.rejects
 
         publishStateResults(summary, input, rejects, warning, optvals, method)
     }

@@ -27,13 +27,15 @@ process filterTestTracts {
 // `.csv`s are delivered to the `runTract` process.
 process splitTractData {
 
-    container 'rocker/tidyverse'
+    container 'covidestim/webworker:latest'
     time '1h' // S3 copies take forever, probably a better way to do this
+    memory '4GB'
 
     input:
       file allTractData
       file rejects
-    output: file '*.csv'
+    output:
+      path '*.csv'
 
     shell:
     """

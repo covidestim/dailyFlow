@@ -4,7 +4,7 @@
 // generate today's copy of either county-level or state-level data. Stage this
 // data for splitting by `splitTractData`. This process uses state-level 
 // Covid Tracking Project data. The next uses Johns Hopkins' county-level data.
-process ctpData {
+process staticManuscriptData {
     container 'rocker/tidyverse'
 
     // Retry once in case of HTTP errors, before giving up
@@ -19,22 +19,20 @@ process ctpData {
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
     """
-    git clone https://github.com/covidestim/covidestim-sources && \
-    cd covidestim-sources && \
-    make -B data-products/covidtracking-smoothed.csv && \
-    mv data-products/covidtracking-smoothed.csv ../data.csv
-
-    echo 'state,code,reason' > ../rejects.csv
+    wget "https://covidestim.s3.amazonaws.com/manuscript-fall-2021-input.tar.gz" && \
+      tar -xzvf manuscript-fall-2021-input.tar.gz && \
+      mv county.csv data.csv &&
+      mv county-rejects.csv rejects.csv
     """
 }
 
-process jhuData {
-    container 'rocker/tidyverse' // Name of singularity+docker container
+process staticManuscriptStateData {
+    container 'rocker/tidyverse'
 
     // Retry once in case of HTTP errors, before giving up
     errorStrategy 'retry'
     maxRetries 1
-    time '15m'
+    time '5m'
 
     output:
       path 'data.csv',    emit: data
@@ -42,81 +40,11 @@ process jhuData {
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
-    shell:
-
-    if (params.timemachine != false)
-      """
-      echo "Using time machine ending on date !{params.timemachine}"
-      git clone https://github.com/covidestim/covidestim-sources && \
-        cd covidestim-sources && \
-        git submodule init && \
-        git submodule update --remote data-sources/jhu-data && \
-        cd data-sources/jhu-data && \
-        git log -1 --before !{params.timemachine}T06:00:00Z --pretty=%h | xargs git checkout && \
-        cd ../.. && \
-        make -B data-products/jhu-counties.csv data-products/jhu-counties-rejects.csv && \
-        mv data-products/jhu-counties.csv ../data.csv && \
-        mv data-products/jhu-counties-rejects.csv ../rejects.csv
-      """
-    else 
-      """
-      echo "Not using time machine; pulling latest data"
-      git clone https://github.com/covidestim/covidestim-sources && \
-        cd covidestim-sources && \
-        git submodule init && \
-        git submodule update --depth 1 --remote data-sources/jhu-data && \
-        make -B data-products/jhu-counties.csv data-products/jhu-counties-rejects.csv && \
-        mv data-products/jhu-counties.csv ../data.csv && \
-        mv data-products/jhu-counties-rejects.csv ../rejects.csv
-      """
-}
-
-process jhuStateData {
-    container 'rocker/tidyverse' // Name of singularity+docker container
-
-    // Retry once in case of HTTP errors, before giving up
-    errorStrategy 'retry'
-    maxRetries 1
-    time '15m'
-
-    output:
-      path 'data.csv',    emit: data
-      path 'rejects.csv', emit: rejects
-
-    // Clone the 'covidestim-sources' repository, and use it to generate
-    // the input data for the model
-    shell:
-
-    if (params.timemachine != false)
-      '''
-      INPUTPREFIX=jhu-states!{params.splicedate ? "-spliced-" + params.splicedate : ""}
-
-      echo "Using time machine ending on date !{params.timemachine}"
-      git clone https://github.com/covidestim/covidestim-sources && \
-        cd covidestim-sources && \
-        git submodule init && \
-        git submodule update --remote data-sources/jhu-data && \
-        cd data-sources/jhu-data && \
-        git log -1 --before !{params.timemachine}T06:00:00Z --pretty=%h | xargs git checkout && \
-        cd ../.. && \
-        make -B data-products/$INPUTPREFIX.csv \
-          data-products/$INPUTPREFIX-rejects.csv && \
-        mv data-products/$INPUTPREFIX.csv ../data.csv && \
-        mv data-products/$INPUTPREFIX-rejects.csv ../rejects.csv
-      '''
-    else 
-      '''
-      INPUTPREFIX=jhu-states!{params.splicedate ? "-spliced-" + params.splicedate : ""}
-
-      echo "Not using time machine; pulling latest data"
-      git clone https://github.com/covidestim/covidestim-sources && \
-        cd covidestim-sources && \
-        git submodule init && \
-        git submodule update --depth 1 --remote data-sources/jhu-data && \
-        make -B data-products/$INPUTPREFIX.csv \
-          data-products/$INPUTPREFIX-rejects.csv && \
-        mv data-products/$INPUTPREFIX.csv ../data.csv && \
-        mv data-products/$INPUTPREFIX-rejects.csv ../rejects.csv
-      '''
+    """
+    wget "https://covidestim.s3.amazonaws.com/manuscript-fall-2021-input.tar.gz" && \
+      tar -xzvf manuscript-fall-2021-input.tar.gz && \
+      mv state.csv data.csv &&
+      mv state-rejects.csv rejects.csv
+    """
 }
 
