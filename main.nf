@@ -3,6 +3,10 @@
 // Enable DSL2
 nextflow.enable.dsl = 2
 
+// EXPERIMENT parameters
+params.nspl_rt_knotwidth = 5
+params.predata_flat_rt = "FALSE"
+
 params.testtracts   = false    // By default, run all tracts
 params.PGCONN       = "null"   // By default, there's no DB connection
 params.timemachine  = false    // By default, use latest data
