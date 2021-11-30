@@ -57,7 +57,7 @@ process runTractSampler {
                         region   = region,
                         pop_size = get_pop(region),
                         nspl_rt_knotwidth = !{params.nspl_rt_knotwidth},
-                        predata_flat_rt = !{params.predata_flat_rt}) +
+                        predata_flat_rt = "!{params.predata_flat_rt}" == "true") +
         input_cases(d_cases) + input_deaths(d_deaths)
 
       print(cfg)
@@ -162,7 +162,7 @@ process runTractOptimizer {
                         region   = region,
                         pop_size = get_pop(region),
                         nspl_rt_knotwidth = !{params.nspl_rt_knotwidth},
-                        predata_flat_rt = !{params.predata_flat_rt}) +
+                        predata_flat_rt = "!{params.predata_flat_rt}" == "true") +
         input_cases(d_cases) + input_deaths(d_deaths)
 
       print(cfg)
