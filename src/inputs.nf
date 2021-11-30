@@ -43,7 +43,7 @@ process staticManuscriptStateData {
     """
     wget "https://covidestim.s3.amazonaws.com/manuscript-fall-2021-input.tar.gz" && \
       tar -xzvf manuscript-fall-2021-input.tar.gz && \
-      mv state.csv data.csv &&
+      mv state-splines.csv data.csv &&
       mv state-rejects.csv rejects.csv
     """
 }
