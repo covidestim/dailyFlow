@@ -29,7 +29,6 @@ nextflow run . \
   -profile "slurm,states,farnam" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
-  --raw true \
   --key $key \
   --outdir v0-state \
   --date $date

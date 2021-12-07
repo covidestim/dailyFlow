@@ -93,6 +93,7 @@ process jhuStateVaxData {
       echo "Not using time machine; pulling latest data"
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
+        git checkout immunity && \
         git submodule init && \
         git submodule update --depth 1 --remote data-sources/jhu-data && \
         git submodule update --depth 1 --remote data-sources/nytimes-data && \
