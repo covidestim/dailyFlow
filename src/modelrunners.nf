@@ -63,13 +63,31 @@ process runTractSampler {
                         seed     = sample.int(.Machine$integer.max, 1),
                         region   = region,
                         pop_size = get_pop(region),
-                        pop_under12  = get_pop_under12(region)) +
+                        pop_under12 = get_pop_under12(region),
+                        waningScenario = !{params.waningscenario}) +
         input_cases(d_cases) +
         input_deaths(d_deaths) +
         input_rr(d_rr) +
         input_vaccinations(d_vaccinated)
 
       print(cfg)
+      resultOptimizer <- runnerOptimizer(cfg, cores = 1, tries = 10)
+
+      run_summary <- summary(resultOptimizer$result)
+      warnings    <- resultOptimizer$warnings
+      opt_vals    <- resultOptimizer$result$opt_vals
+
+      # If it's the last attempt
+      if ("!{task.attempt == params.time.size()}" == "true" &&
+          "!{params.alwayssample}" == "false") {
+        return(list(
+          run_summary = bind_cols(!{params.key} = region, run_summary),
+          warnings    = bind_cols(!{params.key} = region, warnings = warnings),
+          opt_vals    = bind_cols(!{params.key} = region, optvals  = opt_vals),
+          method      = bind_cols(!{params.key} = region, method   = "optimizer"),
+          raw         = resultOptimizer
+        ))
+      }
    
       result <- runner(cfg, cores = !{task.cpus})
 
@@ -176,7 +194,8 @@ process runTractOptimizer {
                         seed     = sample.int(.Machine$integer.max, 1),
                         region   = region,
                         pop_size = get_pop(region),
-                        pop_under12  = get_pop_under12(region)) +
+                        pop_under12 = get_pop_under12(region),
+                        waningScenario = !{params.waningscenario}) +
         input_cases(d_cases) +
         inputDeaths +
         input_rr(d_rr) +

@@ -17,6 +17,7 @@ params.s3pub        = false    // Don't upload to S3 by default
 params.splicedate   = false    // By default, don't do any custom date splicing
                                //   for state-level runs. This still means that
                                //   CTP data will prefill JHU data.
+params.waningscenario = 1
 
 // Where a set of backup LM objects for creating synthetic intervals resides.
 params.syntheticBackup = 's3://covidestim/synthetic-backup/backup.RDS'
@@ -24,7 +25,6 @@ params.syntheticBackup = 's3://covidestim/synthetic-backup/backup.RDS'
 include {fayetteVaxData; fayetteStateVaxData} from './src/inputs'
 include {filterTestTracts; splitTractData} from './src/inputs-utils'
 include {runTractSampler; runTractOptimizer} from './src/modelrunners'
-include {makeSyntheticIntervals} from './src/synthetic-intervals'
 include {publishStateResults; publishCountyResults} from './src/outputs'
 
 def collectCSVs(chan, fname) {
@@ -121,28 +121,17 @@ main:
         input   = fayetteStateVaxData.out.data
         rejects = fayetteStateVaxData.out.rejects
 
-        makeSyntheticIntervals(
-            summary,
-            metadata, 
-            file(params.syntheticBackup)
-        )
-
-        summarySynthetic = collectCSVs(
-            makeSyntheticIntervals.out.summary,
-            'summary_synthetic.csv'
-        )
-
         publishStateResults(
-            summarySynthetic,
+            summary,
             input,
             rejects,
             warning,
             optvals,
             method,
-            makeSyntheticIntervals.out.metadata
+            metadata
         )
 
-        final_metadata = collectJSONs(makeSyntheticIntervals.out.metadata, 'final_metadata.json')
+        final_metadata = collectJSONs(metadata, 'final_metadata.json')
     }
 
     // Collect the list of rejected states or counties which were NOT run
