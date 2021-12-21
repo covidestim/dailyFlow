@@ -57,12 +57,17 @@ process runTractSampler {
       d_deaths <- select(tractData, date, observation = deaths)
       d_vax    <- select(tractData, date, observation = RR)
 
+      lastDataDate <- as.Date('2021-12-22')
+      
+      if (lubridate::today() > as.Date('2022-01-02'))
+        lastDataDate <- NULL
+
       cfg <- covidestim(ndays    = nrow(tractData),
                         seed     = sample.int(.Machine$integer.max, 1),
                         region   = region,
                         pop_size = get_pop(region)) +
-        input_cases(d_cases) +
-        input_deaths(d_deaths) +
+        input_cases(d_cases, lastCaseDate = lastDataDate) +
+        input_deaths(d_deaths, lastDeathDate = lastDataDate) +
         input_vaccines(d_vax)
 
       print(cfg)
@@ -188,12 +193,17 @@ process runTractOptimizer {
         )
       }
 
+      lastDataDate <- as.Date('2021-12-22')
+      
+      if (lubridate::today() > as.Date('2022-01-02'))
+        lastDataDate <- NULL
+
       cfg <- covidestim(ndays    = nrow(tractData),
                         seed     = sample.int(.Machine$integer.max, 1),
                         region   = region,
                         pop_size = get_pop(region)) +
-        input_cases(d_cases) +
-        inputDeaths +
+        input_cases(d_cases, lastCaseDate = lastDataDate) +
+        input_deaths(d_deaths, lastDeathDate = lastDataDate) +
         input_vaccines(d_vax)
 
       print("Configuration:")
