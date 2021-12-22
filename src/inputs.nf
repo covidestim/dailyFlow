@@ -165,7 +165,7 @@ process fayetteStateVaxData {
     wget "https://covidestim.s3.amazonaws.com/fayette-inputs.tar.gz" && \
       tar -xzvf fayette-inputs.tar.gz && \
       mv case-death-rr-vax-state.csv data.csv && \
-      mv case-death-rr-state-metadata.json metadata.json && \
+      mv case-death-rr-vax-state-metadata.json metadata.json && \
       mv case-death-rr-vax-state-rejects.csv rejects.csv
     """
 }
