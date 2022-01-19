@@ -23,7 +23,7 @@ params.max_treedepth = 14
 params.iter          = 3000
 params.warmup        = 2000
 
-include {staticManuscriptData; staticManuscriptStateData} from './src/inputs'
+include {staticManuscriptData; staticManuscriptDCData; staticManuscriptStateData} from './src/inputs'
 include {filterTestTracts; splitTractData} from './src/inputs-utils'
 include {runTractSampler; runTractOptimizer} from './src/modelrunners'
 include {publishStateResults; publishCountyResults} from './src/outputs'
@@ -39,7 +39,7 @@ def collectCSVs(chan, fname) {
 
 workflow {
 main:
-    generateData = params.key == "fips" ? staticManuscriptData : staticManuscriptStateData
+    generateData = params.key == "fips" ? staticManuscriptData : staticManuscriptDCData
 
     runner = ""
 
@@ -77,8 +77,8 @@ main:
 
         publishCountyResults(summary, input, rejects, warning, optvals)
     } else {
-        input   = staticManuscriptStateData.out.data
-        rejects = staticManuscriptStateData.out.rejects
+        input   = staticManuscriptDCData.out.data
+        rejects = staticManuscriptDCData.out.rejects
 
         publishStateResults(summary, input, rejects, warning, optvals, method)
     }

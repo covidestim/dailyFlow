@@ -48,3 +48,25 @@ process staticManuscriptStateData {
     """
 }
 
+process staticManuscriptDCData {
+    container 'rocker/tidyverse'
+
+    // Retry once in case of HTTP errors, before giving up
+    errorStrategy 'retry'
+    maxRetries 1
+    time '5m'
+
+    output:
+      path 'data.csv',    emit: data
+      path 'rejects.csv', emit: rejects
+
+    // Clone the 'covidestim-sources' repository, and use it to generate
+    // the input data for the model
+    """
+    wget "https://covidestim.s3.amazonaws.com/manuscript-fall-2021-input-DC.tar.gz" && \
+      tar -xzvf manuscript-fall-2021-input-DC.tar.gz && \
+      mv state.csv data.csv &&
+      mv state-rejects.csv rejects.csv
+    """
+}
+
