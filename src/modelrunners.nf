@@ -52,10 +52,13 @@ process runTractSampler {
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
 
-      cfg <- covidestim(ndays    = nrow(tractData),
-                        seed     = sample.int(.Machine$integer.max, 1),
-                        region   = region,
-                        pop_size = get_pop(region)) +
+      cfg <- covidestim(ndays         = nrow(tractData),
+                        seed          = sample.int(.Machine$integer.max, 1),
+                        region        = region,
+                        pop_size      = get_pop(region),
+                        max_treedepth = !{params.max_treedepth},
+                        iter          = !{params.iter},
+                        warmup        = !{params.warmup}) +
         input_cases(d_cases) + input_deaths(d_deaths)
 
       print(cfg)
@@ -155,10 +158,13 @@ process runTractOptimizer {
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
 
-      cfg <- covidestim(ndays    = nrow(tractData),
-                        seed     = sample.int(.Machine$integer.max, 1),
-                        region   = region,
-                        pop_size = get_pop(region)) +
+      cfg <- covidestim(ndays         = nrow(tractData),
+                        seed          = sample.int(.Machine$integer.max, 1),
+                        region        = region,
+                        pop_size      = get_pop(region),
+                        max_treedepth = !{params.max_treedepth},
+                        iter          = !{params.iter},
+                        warmup        = !{params.warmup}) +
         input_cases(d_cases) + input_deaths(d_deaths)
 
       print(cfg)

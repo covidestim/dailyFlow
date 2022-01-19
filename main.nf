@@ -18,6 +18,11 @@ params.splicedate   = false    // By default, don't do any custom date splicing
                                //   for state-level runs. This still means that
                                //   CTP data will prefill JHU data.
 
+// `covidestim()` options
+params.max_treedepth = 14
+params.iter          = 3000
+params.warmup        = 2000
+
 include {staticManuscriptData; staticManuscriptStateData} from './src/inputs'
 include {filterTestTracts; splitTractData} from './src/inputs-utils'
 include {runTractSampler; runTractOptimizer} from './src/modelrunners'
