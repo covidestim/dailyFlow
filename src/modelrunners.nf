@@ -55,15 +55,25 @@ process runTractSampler {
 
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
-      d_vax    <- select(tractData, date, observation = RR)
+      d_rr    <- select(tractData, date, observation = RR)
+      d_boost    <- select(tractData, date, observation = boost)
+      d_hosp    <- select(tractData, date, observation = hospi)
 
-      cfg <- covidestim(ndays    = nrow(tractData),
+      imminits <- get_imm_init(region)
+
+      cfg <- covidestim(nweeks    = nrow(tractData),
                         seed     = sample.int(.Machine$integer.max, 1),
                         region   = region,
-                        pop_size = get_pop(region)) +
+                        pop_size = get_pop(region),
+                        cum_p_inf_init = imminits$cum_p_inf_init,
+                        start_p_imm = imminits$start_p_imm,
+                        pop_size = get_pop(region),
+                        nweeks_before = 4) +
         input_cases(d_cases) +
         input_deaths(d_deaths) +
-        input_vaccines(d_vax)
+        input_rr(d_rr) + 
+        input_boost(d_boost) +
+        input_hosp(d_hosp)
 
       print(cfg)
       resultOptimizer <- runnerOptimizer(cfg, cores = 1, tries = 10)
@@ -176,8 +186,12 @@ process runTractOptimizer {
 
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
-      d_vax    <- select(tractData, date, observation = RR)
+      d_rr    <- select(tractData, date, observation = RR)
+      d_boost    <- select(tractData, date, observation = boost)
+      d_hosp    <- select(tractData, date, observation = hospi)
 
+      imminits <- get_imm_init(region)
+      
       if (is.null(regionMetadata$nonReportingBegins) || is.na(regionMetadata$nonReportingBegins)) {
         inputDeaths <- input_deaths(d_deaths)
       } else {
@@ -188,14 +202,20 @@ process runTractOptimizer {
         )
       }
 
-      cfg <- covidestim(ndays    = nrow(tractData),
-                        seed     = sample.int(.Machine$integer.max, 1),
-                        region   = region,
-                        pop_size = get_pop(region)) +
+      cfg <- covidestim(nweeks            = nrow(tractData),
+                        seed              = sample.int(.Machine$integer.max, 1),
+                        region            = region,
+                        pop_size          = get_pop(region),
+                        cum_p_inf_init    = imminits$cum_p_inf_init,
+                        start_p_imm m     = imminits$start_p_imm,
+                        pop_size          = get_pop(region),
+                        nweeks_before     = 4) +
         input_cases(d_cases) +
-        inputDeaths +
-        input_vaccines(d_vax)
-
+        input_deaths(d_deaths) +
+        input_rr(d_rr) + 
+        input_boost(d_boost) +
+        input_hosp(d_hosp)
+        
       print("Configuration:")
       print(cfg)
 

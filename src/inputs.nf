@@ -35,12 +35,12 @@ process jhuVaxData {
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
         git submodule init && \
-        git submodule update --depth 1 --remote data-sources/jhu-data && \
-        make -B data-products/case-death-rr.csv \
+        git submodule update --remote &&
+        make -B data-products/case-death-rr-boost-hosp.csv \
           data-products/jhu-counties-rejects.csv \
-          data-products/case-death-rr-metadata.json && \
-        mv data-products/case-death-rr.csv ../data.csv && \
-        mv data-products/case-death-rr-metadata.json ../metadata.json && \
+          data-products/case-death-rr-boost-hosp-metadata.json && \
+        mv data-products/case-death-rr-boost-hosp.csv ../data.csv && \
+        mv data-products/case-death-rr-boost-hosp-metadata.json ../metadata.json && \
         mv data-products/jhu-counties-rejects.csv ../rejects.csv
       """
 
@@ -49,8 +49,8 @@ process jhuVaxData {
     echo "Running stub method"
     git clone --depth 1 https://github.com/covidestim/covidestim-sources && \
       cd covidestim-sources && \
-      mv example-output/case-death-rr.csv ../data.csv && \
-      mv example-output/case-death-rr-metadata.json ../metadata.json && \
+      mv example-output/case-death-rr-boost-hosp.csv ../data.csv && \
+      mv example-output/case-death-rr-boost-hosp-metadata.json ../metadata.json && \
       mv example-output/jhu-counties-rejects.csv ../rejects.csv
     """
 }
@@ -87,13 +87,13 @@ process jhuStateVaxData {
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
         git submodule init && \
-        git submodule update --depth 1 --remote data-sources/jhu-data && \
-        make -B data-products/case-death-rr-state.csv \
+        git submodule update --remote && \
+        make -B data-products/case-death-rr-boost-hosp-state.csv \
           data-products/jhu-states-rejects.csv \
-          data-products/case-death-rr-state-metadata.json && \
-        mv data-products/case-death-rr-state.csv ../data.csv && \
+          data-products/case-death-rr-boost-hosp-state-metadata.json && \
+        mv data-products/case-death-rr-boost-hosp-state.csv ../data.csv && \
         mv data-products/jhu-states-rejects.csv ../rejects.csv && \
-        mv data-products/case-death-rr-state-metadata.json ../metadata.json
+        mv data-products/case-death-rr-boost-hosp-state-metadata.json ../metadata.json
       '''
 
     stub:
@@ -101,8 +101,8 @@ process jhuStateVaxData {
     echo "Running stub method"
     git clone --depth 1 https://github.com/covidestim/covidestim-sources && \
       cd covidestim-sources && \
-      mv example-output/case-death-rr-state.csv ../data.csv && \
-      mv example-output/case-death-rr-state-metadata.json ../metadata.json && \
+      mv example-output/case-death-rr-boost-hosp-state.csv ../data.csv && \
+      mv example-output/case-death-rr-boost-hosp-state-metadata.json ../metadata.json && \
       mv example-output/jhu-states-rejects.csv ../rejects.csv
     """
 }
