@@ -18,14 +18,14 @@
 #   to find the exact syntax
 
 date="$(date '+%Y-%m-%d')"
-branch="RiskSpace"
-key=fips
+branch="schema"
+key=state
 
 # Targets YCRC/Grace
 nextflow run . \
   --s3pub false \
-  -profile "local,counties" \
+  -profile "local,states" \
   --branch $branch \
   --key $key \
-  --outdir VACCINES_TEST1 \
+  --outdir SCHEMA_TEST1 \
   --date $date
