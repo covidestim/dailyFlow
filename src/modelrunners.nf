@@ -61,14 +61,13 @@ process runTractSampler {
 
       imminits <- get_imm_init(region)
 
-      cfg <- covidestim(nweeks    = nrow(tractData),
-                        seed     = sample.int(.Machine$integer.max, 1),
-                        region   = region,
-                        pop_size = get_pop(region),
+      cfg <- covidestim(nweeks         = nrow(tractData),
+                        seed           = sample.int(.Machine$integer.max, 1),
+                        region         = region,
                         cum_p_inf_init = imminits$cum_p_inf_init,
-                        start_p_imm = imminits$start_p_imm,
-                        pop_size = get_pop(region),
-                        nweeks_before = 4) +
+                        start_p_imm    = imminits$start_p_imm,
+                        pop_size       = get_pop(region),
+                        nweeks_before  = 4) +
         input_cases(d_cases) +
         input_deaths(d_deaths) +
         input_rr(d_rr) + 
@@ -202,14 +201,13 @@ process runTractOptimizer {
         )
       }
 
-      cfg <- covidestim(nweeks            = nrow(tractData),
-                        seed              = sample.int(.Machine$integer.max, 1),
-                        region            = region,
-                        pop_size          = get_pop(region),
-                        cum_p_inf_init    = imminits$cum_p_inf_init,
-                        start_p_imm m     = imminits$start_p_imm,
-                        pop_size          = get_pop(region),
-                        nweeks_before     = 4) +
+      cfg <- covidestim(nweeks         = nrow(tractData),
+                        seed           = sample.int(.Machine$integer.max, 1),
+                        region         = region,
+                        cum_p_inf_init = imminits$cum_p_inf_init,
+                        start_p_imm    = imminits$start_p_imm,
+                        pop_size       = get_pop(region),
+                        nweeks_before  = 4) +
         input_cases(d_cases) +
         input_deaths(d_deaths) +
         input_rr(d_rr) + 
