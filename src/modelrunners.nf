@@ -42,7 +42,7 @@ process runTractSampler {
         !{params.key} = col_character(),
         .default = col_number() # covers cases/deaths/fracpos/volume/RR
       )
-    ) %>% group_by(!{params.key}) %>% filter(date >= as.Date("2021-11-01"))
+    ) %>% group_by(!{params.key}) %>% filter(date >= as.Date("2022-01-01"))
 
     metadata <- jsonlite::read_json("!{metadata}", simplifyVector = T)
 
