@@ -185,9 +185,9 @@ process runTractOptimizer {
 
       d_cases  <- select(tractData, date, observation = cases)
       d_deaths <- select(tractData, date, observation = deaths)
-      d_rr    <- select(tractData, date, observation = RR)
-      d_boost    <- select(tractData, date, observation = boost)
-      d_hosp    <- select(tractData, date, observation = hospi)
+      d_rr     <- select(tractData, date, observation = RR)
+      d_boost  <- select(tractData, date, observation = boost)
+      d_hosp   <- select(tractData, date, observation = hospi)
 
       imminits <- get_imm_init(region)
       

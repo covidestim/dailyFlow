@@ -23,7 +23,7 @@ process makeSyntheticIntervals {
       --statepop /opt/webworker/data/statepop.csv \
       --backup $backup \
       --writeBackup newBackup.RDS \
-      --vars infections,Rt,cum.incidence \
+      --vars infections,r_t,infections_cumulative \
       --minSampled 10 \
       --metadata $metadata \
       --writeMetadata produced_metadata.json \
