@@ -22,15 +22,18 @@ process publishCountyResults {
 
     """
     # Create a WebPack file for serving to web browsers
-    serialize.R -o summary.pack --pop /opt/webworker/data/fipspop.csv $allResults && \
-      gzip summary.pack
+    covidestim-serialize-counties \
+      -o summary.pack \
+      --pop /opt/webworker/data/fipspop.csv \
+      $allResults && \
+    gzip summary.pack
 
     # Gzip the estimates
     cat $allResults > estimates.csv
     gzip -k estimates.csv
 
     if [ -z ${COVIDESTIM_ENDPOINT+x} ]; then
-        insert.R \
+        covidestim-insert \
           --summary  "$allResults" \
           --input    "$inputData" \
           --metadata "$metadata" \
@@ -67,7 +70,7 @@ process publishStateResults {
     publishDir "$params.webdir/stage/state", enabled: params.s3pub, overwrite: true
 
     """
-    RtLiveConvert.R \
+    covidestim-serialize-states \
       -o summary.pack \
       --pop /opt/webworker/data/statepop.csv \
       --input $inputData \
@@ -79,7 +82,7 @@ process publishStateResults {
     gzip -k estimates.csv
 
     if [ -z ${COVIDESTIM_ENDPOINT+x} ]; then
-        insert.R \
+        covidestim-insert \
           --summary  "$allResults" \
           --input    "$inputData" \
           --method   "$method" \

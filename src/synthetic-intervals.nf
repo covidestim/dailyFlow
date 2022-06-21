@@ -10,6 +10,7 @@ process makeSyntheticIntervals {
       file data
       file metadata
       file backup
+
     output:
       path 'synthetic_summary.csv', emit: summary
       path 'produced_metadata.json', emit: metadata
@@ -18,7 +19,7 @@ process makeSyntheticIntervals {
     publishDir "$params.webdir/synthetic-backup", enabled: params.s3pub, pattern: 'newBackup.RDS', saveAs: { 'backup.RDS' }
 
     """
-    makeSyntheticIntervals.R \
+    covidestim-intervals \
       -o synthetic_summary.csv \
       --statepop /opt/webworker/data/statepop.csv \
       --backup $backup \
