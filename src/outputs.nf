@@ -29,7 +29,7 @@ process publishCountyResults {
     gzip summary.pack
 
     # Gzip the estimates
-    cat $allResults > estimates.csv
+    cp $allResults > estimates.csv
     gzip -k estimates.csv
 
     if [ -z ${COVIDESTIM_ENDPOINT+x} ]; then
@@ -42,7 +42,7 @@ process publishCountyResults {
           --save-mapping mapping.csv
     else
         echo "COVIDESTIM_ENDPOINT not specified; skipping DB inserts";
-    fi
+    fi;
     """
 }
 
@@ -92,7 +92,7 @@ process publishStateResults {
           --save-mapping mapping.csv
     else
         echo "COVIDESTIM_ENDPOINT not specified; skipping DB inserts";
-    fi
+    fi;
     """
 }
 
