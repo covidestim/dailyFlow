@@ -74,7 +74,9 @@ process splitTractData {
         )
       )
 
-    group_by(metadata, flight = tractsGrouped[!{params.key}]) %>%
+    mutate(metadata, flight = tractsGrouped[!{params.key}]) %>%
+      filter(!is.na(flight)) %>%
+      group_by(flight) %>%
       group_walk(
         ~jsonlite::write_json(
           .x,
