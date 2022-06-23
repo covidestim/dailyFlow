@@ -30,7 +30,7 @@ nextflow run covidestim/dailyFlow \
   -r "master" \
   --s3pub true \
   -latest \
-  -profile "slurm,states,farnam" \
+  -profile "slurm,states" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
   --raw false \

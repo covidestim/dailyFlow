@@ -23,13 +23,22 @@ date="$(date '+%Y-%m-%d')"
 branch="schema"
 key=state
 
-# Targets YCRC/Grace
 nextflow run . \
   -profile "local,states,db_local" \
   $@ \
   --s3pub false \
   --branch $branch \
-  --n 4 \
   --key $key \
-  --outdir SCHEMA_TEST2 \
+  --outdir SCHEMA_TEST3_STATES \
+  --date $date
+
+nextflow run . \
+  -profile "local,counties,db_local" \
+  $@ \
+  --ngroups 150 \
+  --raw false\
+  --s3pub false \
+  --branch $branch \
+  --key fips \
+  --outdir SCHEMA_TEST3_COUNTIES \
   --date $date
