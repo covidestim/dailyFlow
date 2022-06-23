@@ -15,13 +15,15 @@ export NXF_ENABLE_SECRETS=true
 
 date="$(date '+%Y-%m-%d')"
 branch="schema"
-key=state
+key=fips
 
 nextflow run . \
-  -profile "local,states,db_local" \
+  -profile "local,counties,db_local" \
   $@ \
+  --ngroups 150 \
+  --raw false\
   --s3pub false \
   --branch $branch \
   --key $key \
-  --outdir SCHEMA_TEST4_STATES \
+  --outdir SCHEMA_TEST4_COUNTIES \
   --date $date
