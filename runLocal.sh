@@ -25,9 +25,11 @@ key=state
 
 # Targets YCRC/Grace
 nextflow run . \
+  -profile "local,states,db_local" \
+  $@ \
   --s3pub false \
-  -profile "local,states" \
   --branch $branch \
+  --n 4 \
   --key $key \
-  --outdir SCHEMA_TEST1 \
+  --outdir SCHEMA_TEST2 \
   --date $date
