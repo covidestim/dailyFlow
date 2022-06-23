@@ -4,6 +4,8 @@ process publishCountyResults {
     time '1h'
     memory '4GB'
 
+    secret 'COVIDESTIM_JWT'
+
     input:
         file allResults
         file inputData
@@ -26,23 +28,18 @@ process publishCountyResults {
       -o summary.pack \
       --pop /opt/webworker/data/fipspop.csv \
       $allResults && \
-    gzip summary.pack
+    gzip -f summary.pack
 
     # Gzip the estimates
-    cp $allResults > estimates.csv
-    gzip -k estimates.csv
+    cp $allResults estimates.csv && gzip -kf estimates.csv
 
-    if [ -z ${COVIDESTIM_ENDPOINT+x} ]; then
-        covidestim-insert \
-          --summary  "$allResults" \
-          --input    "$inputData" \
-          --metadata "$metadata" \
-          --key       fips \
-          --run-date  $params.date \
-          --save-mapping mapping.csv
-    else
-        echo "COVIDESTIM_ENDPOINT not specified; skipping DB inserts";
-    fi;
+    covidestim-insert \
+      --summary  "$allResults" \
+      --input    "$inputData" \
+      --metadata "$metadata" \
+      --key       fips \
+      --run-date  $params.date \
+      --save-mapping mapping.csv
     """
 }
 
@@ -51,6 +48,8 @@ process publishStateResults {
     container 'covidestim/webworker:latest'
     time '1h'
     memory '4GB'
+
+    secret 'COVIDESTIM_JWT'
 
     input:
         file allResults
@@ -76,23 +75,18 @@ process publishStateResults {
       --input $inputData \
       --method $method \
       $allResults && \
-      gzip summary.pack
+      gzip -f summary.pack
 
-    cat $allResults > estimates.csv
-    gzip -k estimates.csv
+    cp $allResults estimates.csv && gzip -kf estimates.csv
 
-    if [ -z ${COVIDESTIM_ENDPOINT+x} ]; then
-        covidestim-insert \
-          --summary  "$allResults" \
-          --input    "$inputData" \
-          --method   "$method" \
-          --metadata "$metadata" \
-          --key       state \
-          --run-date  $params.date \
-          --save-mapping mapping.csv
-    else
-        echo "COVIDESTIM_ENDPOINT not specified; skipping DB inserts";
-    fi;
+    covidestim-insert \
+      --summary  "$allResults" \
+      --input    "$inputData" \
+      --method   "$method" \
+      --metadata "$metadata" \
+      --key       state \
+      --run-date  $params.date \
+      --save-mapping mapping.csv
     """
 }
 
