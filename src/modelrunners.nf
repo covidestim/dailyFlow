@@ -4,6 +4,9 @@ process runTractSampler {
     cpus 3
     memory '3 GB' // Currently unsure of exact memory needs. At least 800MB
 
+    secret 'COVIDESTIM_DBSTAN_USER'
+    secret 'COVIDESTIM_DBSTAN_PASS'
+
     // Retry with stepped timelimits
     time          { params.time[task.attempt - 1] }
     errorStrategy { task.attempt == params.time.size() ? 'ignore' : 'retry' }
@@ -43,6 +46,7 @@ process runTractSampler {
       --save-optvals optvals.csv \
       --save-method  method.csv \
       --save-metadata produced_metadata.json \
+      --dbstan-insert
       $save_raw $raw_location
     """
 }
