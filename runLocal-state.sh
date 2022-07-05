@@ -23,5 +23,5 @@ nextflow run . \
   --s3pub false \
   --branch $branch \
   --key $key \
-  --outdir SCHEMA_TEST4_STATES \
+  --outdir SCHEMA_TEST13_STATES_MINI \
   --date $date

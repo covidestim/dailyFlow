@@ -20,10 +20,10 @@ key=fips
 nextflow run . \
   -profile "local,counties,db_local" \
   $@ \
-  --ngroups 150 \
+  --ngroups 4000 \
   --raw false\
   --s3pub false \
   --branch $branch \
   --key $key \
-  --outdir SCHEMA_TEST4_COUNTIES \
+  --outdir SCHEMA_TEST12_COUNTIES_UNGROUPED \
   --date $date
