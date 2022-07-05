@@ -3,8 +3,8 @@
 // Enable DSL2
 nextflow.enable.dsl = 2
 
+params.insert       = false    // By default, don't insert runs or stanfits into the DB
 params.testtracts   = false    // By default, run all tracts
-params.PGCONN       = "null"   // By default, there's no DB connection
 params.timemachine  = false    // By default, use latest data
 params.alwayssample = false    // By default, fall back to the optimizer for states
 params.alwaysoptimize = false  // By default, use the sampler for states
@@ -25,7 +25,7 @@ include {jhuVaxData; jhuStateVaxData} from './src/inputs'
 include {filterTestTracts; splitTractData} from './src/inputs-utils'
 include {runTractSampler; runTractOptimizer} from './src/modelrunners'
 include {makeSyntheticIntervals} from './src/synthetic-intervals'
-include {publishStateResults; publishCountyResults} from './src/outputs'
+include {publishStateResults; publishCountyResults; insertResults} from './src/outputs'
 
 def collectCSVs(chan, fname) {
     chan.collectFile(
@@ -117,6 +117,7 @@ main:
         rejects = jhuVaxData.out.rejects
 
         publishCountyResults(summary, input, rejects, warning, optvals, metadata)
+        insertResults(summary, input, metadata, method)
     } else {
         input   = jhuStateVaxData.out.data
         rejects = jhuStateVaxData.out.rejects
@@ -140,6 +141,13 @@ main:
             optvals,
             method,
             makeSyntheticIntervals.out.metadata
+        )
+
+        insertResults(
+            summarySynthetic,
+            input,
+            makeSyntheticIntervals.out.metadata,
+            method
         )
 
         final_metadata = collectJSONs(makeSyntheticIntervals.out.metadata, 'final_metadata.json')

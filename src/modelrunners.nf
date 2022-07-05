@@ -31,9 +31,10 @@ process runTractSampler {
         path "${task.tag}.RDS" optional !params.raw
 
     script:
-    attempts     = params.time.size() - task.attempt + 1
-    save_raw     = params.raw ? "--save-raw"      : ""
-    raw_location = params.raw ? "${task.tag}.RDS" : ""
+    attempts      = params.time.size() - task.attempt + 1
+    dbstan_insert = params.insert ? "--dbstan-insert" : ""
+    save_raw      = params.raw ? "--save-raw"      : ""
+    raw_location  = params.raw ? "${task.tag}.RDS" : ""
     """
     covidestim-batch \
       --input $tractData \
@@ -46,7 +47,7 @@ process runTractSampler {
       --save-optvals optvals.csv \
       --save-method  method.csv \
       --save-metadata produced_metadata.json \
-      --dbstan-insert
+      $dbstan_insert \
       $save_raw $raw_location
     """
 }
@@ -59,8 +60,8 @@ process runTractOptimizer {
 
     time '6h'
 
-    errorStrategy "retry"
-    maxRetries 1
+    errorStrategy "ignore"
+    // maxRetries 1
 
     // Files from `splitTractData` are ALWAYS named by the tract they
     // represent, i.e. state name or county FIPS. We can get the name of the
