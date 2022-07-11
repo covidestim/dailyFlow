@@ -58,7 +58,11 @@ process runTractOptimizer {
     cpus 1
     memory '3 GB' // Currently unsure of exact memory needs. At least 800MB
 
-    time '6h'
+    time {
+        params.ngroups == 10000000 ?
+            20.seconds :
+            20.seconds * 3300 / (params.ngroups as int)
+    }
 
     errorStrategy "ignore"
     // maxRetries 1
