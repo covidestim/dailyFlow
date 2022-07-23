@@ -25,5 +25,5 @@ nextflow run . \
   --s3pub false \
   --branch $branch \
   --key $key \
-  --outdir SCHEMA_TEST12_COUNTIES_UNGROUPED \
+  --outdir test-$(date +%Y-%m-%d)-counties \
   --date $date
