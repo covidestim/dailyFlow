@@ -5,7 +5,6 @@ nextflow.enable.dsl = 2
 
 params.insert       = false    // By default, don't insert runs or stanfits into the DB
 params.testtracts   = false    // By default, run all tracts
-params.timemachine  = false    // By default, use latest data
 params.alwayssample = false    // By default, fall back to the optimizer for states
 params.alwaysoptimize = false  // By default, use the sampler for states
 params.n            = -1       // By default, run all tracts

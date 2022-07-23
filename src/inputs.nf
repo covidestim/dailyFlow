@@ -23,28 +23,20 @@ process jhuVaxData {
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
     shell:
-
-    if (params.timemachine != false)
-      """
-      echo "Error: Cannot use timemachine for jhuVaxData!"
-      exit 1
-      """
-    else 
-      """
-      echo "Not using time machine; pulling latest data"
-      git clone https://github.com/covidestim/covidestim-sources && \
-        cd covidestim-sources && \
-        git checkout hospitalizations-states && \
-        git lfs checkout && \
-        git submodule init && \
-        git submodule update --recommend-shallow --depth 1 --remote && \
-        make -B data-products/case-death-rr-boost-hosp.csv \
-          data-products/jhu-counties-rejects.csv \
-          data-products/case-death-rr-boost-hosp-metadata.json && \
-        mv data-products/case-death-rr-boost-hosp.csv ../data.csv && \
-        mv data-products/case-death-rr-boost-hosp-metadata.json ../metadata.json && \
-        mv data-products/jhu-counties-rejects.csv ../rejects.csv
-      """
+    """
+    git clone https://github.com/covidestim/covidestim-sources && \
+      cd covidestim-sources && \
+      git checkout hospitalizations-states && \
+      git lfs checkout && \
+      git submodule init && \
+      git submodule update --recommend-shallow --depth 1 --remote && \
+      make -B data-products/case-death-rr-boost-hosp.csv \
+        data-products/jhu-counties-rejects.csv \
+        data-products/case-death-rr-boost-hosp-metadata.json && \
+      mv data-products/case-death-rr-boost-hosp.csv ../data.csv && \
+      mv data-products/case-death-rr-boost-hosp-metadata.json ../metadata.json && \
+      mv data-products/jhu-counties-rejects.csv ../rejects.csv
+    """
 
     stub:
     """
@@ -78,28 +70,20 @@ process jhuStateVaxData {
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
     shell:
-
-    if (params.timemachine == true)
-      """
-      echo "Error: Cannot use timemachine for jhuStateVaxData!"
-      exit 1
-      """
-    else 
-      '''
-      echo "Not using time machine; pulling latest data"
-      git clone https://github.com/covidestim/covidestim-sources && \
-        cd covidestim-sources && \
-        git checkout hospitalizations-states && \
-        git lfs checkout && \
-        git submodule init && \
-        git submodule update --recommend-shallow --depth 1 --remote && \
-        make -B data-products/case-death-rr-boost-hosp-state.csv \
-          data-products/jhu-states-rejects.csv \
-          data-products/case-death-rr-boost-hosp-state-metadata.json && \
-        mv data-products/case-death-rr-boost-hosp-state.csv ../data.csv && \
-        mv data-products/jhu-states-rejects.csv ../rejects.csv && \
-        mv data-products/case-death-rr-boost-hosp-state-metadata.json ../metadata.json
-      '''
+    '''
+    git clone https://github.com/covidestim/covidestim-sources && \
+      cd covidestim-sources && \
+      git checkout hospitalizations-states && \
+      git lfs checkout && \
+      git submodule init && \
+      git submodule update --recommend-shallow --depth 1 --remote && \
+      make -B data-products/case-death-rr-boost-hosp-state.csv \
+        data-products/jhu-states-rejects.csv \
+        data-products/case-death-rr-boost-hosp-state-metadata.json && \
+      mv data-products/case-death-rr-boost-hosp-state.csv ../data.csv && \
+      mv data-products/jhu-states-rejects.csv ../rejects.csv && \
+      mv data-products/case-death-rr-boost-hosp-state-metadata.json ../metadata.json
+    '''
 
     stub:
     """
