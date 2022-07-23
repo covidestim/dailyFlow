@@ -22,21 +22,32 @@ process jhuVaxData {
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
-    shell:
-    """
-    git clone https://github.com/covidestim/covidestim-sources && \
-      cd covidestim-sources && \
-      git checkout hospitalizations-states && \
-      git lfs checkout && \
-      git submodule init && \
-      git submodule update --recommend-shallow --depth 1 --remote && \
-      make -B data-products/case-death-rr-boost-hosp.csv \
-        data-products/jhu-counties-rejects.csv \
-        data-products/case-death-rr-boost-hosp-metadata.json && \
-      mv data-products/case-death-rr-boost-hosp.csv ../data.csv && \
-      mv data-products/case-death-rr-boost-hosp-metadata.json ../metadata.json && \
-      mv data-products/jhu-counties-rejects.csv ../rejects.csv
-    """
+    script:
+
+    if (params.inputUrl == false)
+      """
+      git clone https://github.com/covidestim/covidestim-sources && \
+        cd covidestim-sources && \
+        git checkout hospitalizations-states && \
+        git lfs checkout && \
+        git submodule init && \
+        git submodule update --recommend-shallow --depth 1 --remote && \
+        make -B data-products/case-death-rr-boost-hosp.csv \
+          data-products/jhu-counties-rejects.csv \
+          data-products/case-death-rr-boost-hosp-metadata.json && \
+        mv data-products/case-death-rr-boost-hosp.csv ../data.csv && \
+        mv data-products/case-death-rr-boost-hosp-metadata.json ../metadata.json && \
+        mv data-products/jhu-counties-rejects.csv ../rejects.csv
+      """
+    else
+      """
+      echo "Using inputs from url $params.inputUrl"
+      echo "Expecting .tar.gz archive with files data.csv, metadata.json, rejects.csv"
+      wget -O inputs.tar.gz "$params.inputUrl" && \
+        mkdir custom-inputs && \
+        tar -C custom-inputs -xzvf inputs.tar.gz && \
+        mv custom-inputs/{data.csv,metadata.json,rejects.csv} .
+      """
 
     stub:
     """
@@ -69,21 +80,32 @@ process jhuStateVaxData {
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
-    shell:
-    '''
-    git clone https://github.com/covidestim/covidestim-sources && \
-      cd covidestim-sources && \
-      git checkout hospitalizations-states && \
-      git lfs checkout && \
-      git submodule init && \
-      git submodule update --recommend-shallow --depth 1 --remote && \
-      make -B data-products/case-death-rr-boost-hosp-state.csv \
-        data-products/jhu-states-rejects.csv \
-        data-products/case-death-rr-boost-hosp-state-metadata.json && \
-      mv data-products/case-death-rr-boost-hosp-state.csv ../data.csv && \
-      mv data-products/jhu-states-rejects.csv ../rejects.csv && \
-      mv data-products/case-death-rr-boost-hosp-state-metadata.json ../metadata.json
-    '''
+    script:
+
+    if (params.inputUrl == false)
+      '''
+      git clone https://github.com/covidestim/covidestim-sources && \
+        cd covidestim-sources && \
+        git checkout hospitalizations-states && \
+        git lfs checkout && \
+        git submodule init && \
+        git submodule update --recommend-shallow --depth 1 --remote && \
+        make -B data-products/case-death-rr-boost-hosp-state.csv \
+          data-products/jhu-states-rejects.csv \
+          data-products/case-death-rr-boost-hosp-state-metadata.json && \
+        mv data-products/case-death-rr-boost-hosp-state.csv ../data.csv && \
+        mv data-products/jhu-states-rejects.csv ../rejects.csv && \
+        mv data-products/case-death-rr-boost-hosp-state-metadata.json ../metadata.json
+      '''
+    else
+      """
+      echo "Using inputs from url $params.inputUrl"
+      echo "Expecting .tar.gz archive with files data.csv, metadata.json, rejects.csv"
+      wget -O inputs.tar.gz "$params.inputUrl" && \
+        mkdir custom-inputs && \
+        tar -C custom-inputs -xzvf inputs.tar.gz && \
+        mv custom-inputs/{data.csv,metadata.json,rejects.csv} .
+      """
 
     stub:
     """

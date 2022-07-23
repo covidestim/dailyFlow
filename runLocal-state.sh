@@ -24,4 +24,5 @@ nextflow run . \
   --branch $branch \
   --key $key \
   --outdir test-$(date +%Y-%m-%d)-states \
+  --input-url "https://covidestim.s3.amazonaws.com/inputs-for-prerelease-historical-runs/historical-state-11-weeks-back.tar.gz" \
   --date $date

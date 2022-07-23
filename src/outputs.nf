@@ -83,10 +83,10 @@ process insertResults {
         file metadata
         file method
     output:
-        file 'mapping.csv' optional !params.insert
+        file 'mapping.csv' optional !params.insertApi
 
     script:
-    if (params.insert == true && params.key == "state")
+    if (params.insertApi == true && params.key == "state")
         """
         covidestim-insert \
           --summary  "$allResults" \
@@ -99,7 +99,7 @@ process insertResults {
         """
 
     // No need for `--method`, these are all optimized
-    else if (params.insert == true && params.key == "fips")
+    else if (params.insertApi == true && params.key == "fips")
         """
         covidestim-insert \
           --summary  "$allResults" \
@@ -110,14 +110,14 @@ process insertResults {
           --save-mapping mapping.csv
         """
     
-    else if (params.insert == true)
+    else if (params.insertApi == true)
         error "params.key was not state/fips, value: ${params.key}"
 
-    else if (params.insert == false)
+    else if (params.insertApi == false)
         """
-        echo 'params.insert == false, skipping DB inserts'
+        echo 'params.insertApi == false, skipping DB inserts'
         """
     else
-        error "params.insert was not true/false, value: ${params.insert}"
+        error "params.insertApi was not true/false, value: ${params.insert}"
 }
 

@@ -4,6 +4,8 @@ process runTractSampler {
     cpus 3
     memory '3 GB' // Currently unsure of exact memory needs. At least 800MB
 
+    secret 'COVIDESTIM_DBSTAN_HOST'
+    secret 'COVIDESTIM_DBSTAN_DBNAME'
     secret 'COVIDESTIM_DBSTAN_USER'
     secret 'COVIDESTIM_DBSTAN_PASS'
 
@@ -32,7 +34,7 @@ process runTractSampler {
 
     script:
     attempts      = params.time.size() - task.attempt + 1
-    dbstan_insert = params.insert ? "--dbstan-insert" : ""
+    dbstan_insert = params.insertDbstan ? "--dbstan-insert" : ""
     save_raw      = params.raw ? "--save-raw"      : ""
     raw_location  = params.raw ? "${task.tag}.RDS" : ""
     """
