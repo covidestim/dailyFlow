@@ -28,7 +28,6 @@ process combinedVaxData {
       """
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
-        git checkout hospitalizations-states && \
         git lfs checkout && \
         git submodule init && \
         git submodule update --recommend-shallow --depth 1 --remote && \
@@ -54,7 +53,6 @@ process combinedVaxData {
     echo "Running stub method"
     git clone https://github.com/covidestim/covidestim-sources && \
       cd covidestim-sources && \
-      git checkout hospitalizations-states && \
       mv example-output/case-death-rr-boost-hosp.csv ../data.csv && \
       mv example-output/case-death-rr-boost-hosp-metadata.json ../metadata.json && \
       mv example-output/jhu-counties-rejects.csv ../rejects.csv
@@ -86,7 +84,6 @@ process jhuStateVaxData {
       '''
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
-        git checkout hospitalizations-states && \
         git lfs checkout && \
         git submodule init && \
         git submodule update --recommend-shallow --depth 1 --remote && \
@@ -112,7 +109,6 @@ process jhuStateVaxData {
     echo "Running stub method"
     git clone --depth 1 https://github.com/covidestim/covidestim-sources && \
       cd covidestim-sources && \
-      git checkout hospitalizations-states && \
       mv example-output/case-death-rr-boost-hosp-state.csv ../data.csv && \
       mv example-output/case-death-rr-boost-hosp-state-metadata.json ../metadata.json && \
       mv example-output/jhu-states-rejects.csv ../rejects.csv
