@@ -118,6 +118,6 @@ process insertResults {
         echo 'params.insertApi == false, skipping DB inserts'
         """
     else
-        error "params.insertApi was not true/false, value: ${params.insert}"
+        error "params.insertApi was not true/false, value: ${params.insertApi}"
 }
 

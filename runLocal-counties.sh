@@ -18,7 +18,7 @@ branch="schema"
 key=fips
 
 nextflow run . \
-  -profile "local,counties,db_local" \
+  -profile "local,counties,api_local" \
   $@ \
   --ngroups 4000 \
   --raw false\

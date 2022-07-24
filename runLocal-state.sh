@@ -18,7 +18,7 @@ branch="schema"
 key=state
 
 nextflow run . \
-  -profile "local,states,db_local" \
+  -profile "local,states,api_local" \
   $@ \
   --s3pub false \
   --branch $branch \
