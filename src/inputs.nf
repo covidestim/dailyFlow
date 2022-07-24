@@ -22,46 +22,41 @@ process combinedVaxData {
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
-    shell:
+    script:
 
-    if (params.timemachine != false)
+    if (params.inputUrl == false)
       """
-      echo "Error: Cannot use timemachine for combinedVaxData!"
-      exit 1
-      """
-    else 
-      """
-      # WARNING!!!!!!
-      #              REMEMBER TO REMOVE `GIT CHECKOUT` BEFORE MERGING TO MASTER
-      #              AND RE-ADD --DEPTH 1 TO GIT SUBMODULE UPDATE
-      # /WARNING!!!!!!
-      echo "Not using time machine; pulling latest data"
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
-        git checkout immunity && \
+        git checkout hospitalizations-states && \
+        git lfs checkout && \
         git submodule init && \
-        git pull --recurse-submodules origin immunity && \
-        git submodule update --depth 1 --remote data-sources/jhu-data && \
-        git submodule update --depth 1 --remote data-sources/nytimes-data && \
-        git submodule update --remote data-sources/gtown-vax && \
-        cd data-sources/gtown-vax && \
-        git checkout db2f126b379098d190b73342ba9e33160ab6c7fe && \
-        cd ../.. && \
-        make -B data-products/case-death-rr-vax.csv \
-          data-products/combined-counties-rejects.csv \
-          data-products/case-death-rr-vax-metadata.json && \
-        mv data-products/case-death-rr-vax.csv ../data.csv && \
-        mv data-products/case-death-rr-vax-metadata.json ../metadata.json && \
-        mv data-products/combined-counties-rejects.csv ../rejects.csv
+        git submodule update --recommend-shallow --depth 1 --remote && \
+        make -B data-products/case-death-rr-boost-hosp.csv \
+          data-products/jhu-counties-rejects.csv \
+          data-products/case-death-rr-boost-hosp-metadata.json && \
+        mv data-products/case-death-rr-boost-hosp.csv ../data.csv && \
+        mv data-products/case-death-rr-boost-hosp-metadata.json ../metadata.json && \
+        mv data-products/jhu-counties-rejects.csv ../rejects.csv
+      """
+    else
+      """
+      echo "Using inputs from url $params.inputUrl"
+      echo "Expecting .tar.gz archive with files data.csv, metadata.json, rejects.csv"
+      wget -O inputs.tar.gz "$params.inputUrl" && \
+        mkdir custom-inputs && \
+        tar -C custom-inputs -xzvf inputs.tar.gz && \
+        mv custom-inputs/{data.csv,metadata.json,rejects.csv} .
       """
 
     stub:
     """
     echo "Running stub method"
-    git clone --depth 1 https://github.com/covidestim/covidestim-sources && \
+    git clone https://github.com/covidestim/covidestim-sources && \
       cd covidestim-sources && \
-      mv example-output/case-death-rr.csv ../data.csv && \
-      mv example-output/case-death-rr-metadata.json ../metadata.json && \
+      git checkout hospitalizations-states && \
+      mv example-output/case-death-rr-boost-hosp.csv ../data.csv && \
+      mv example-output/case-death-rr-boost-hosp-metadata.json ../metadata.json && \
       mv example-output/jhu-counties-rejects.csv ../rejects.csv
     """
 }
@@ -85,41 +80,41 @@ process jhuStateVaxData {
 
     // Clone the 'covidestim-sources' repository, and use it to generate
     // the input data for the model
-    shell:
+    script:
 
-    if (params.timemachine != false)
-      """
-      echo "Error: Cannot use timemachine for jhuStateVaxData!"
-      exit 1
-      """
-    else 
+    if (params.inputUrl == false)
       '''
-      echo "Not using time machine; pulling latest data"
       git clone https://github.com/covidestim/covidestim-sources && \
         cd covidestim-sources && \
+        git checkout hospitalizations-states && \
+        git lfs checkout && \
         git submodule init && \
-        git pull --recurse-submodules origin immunity && \
-        git submodule update --depth 1 --remote data-sources/jhu-data && \
-        git submodule update --depth 1 --remote data-sources/nytimes-data && \
-        git submodule update --remote data-sources/gtown-vax && \
-        cd data-sources/gtown-vax && \
-        git checkout db2f126b379098d190b73342ba9e33160ab6c7fe && \
-        cd ../.. && \
-        make -B data-products/case-death-rr-state.csv \
+        git submodule update --recommend-shallow --depth 1 --remote && \
+        make -B data-products/case-death-rr-boost-hosp-state.csv \
           data-products/jhu-states-rejects.csv \
-          data-products/case-death-rr-state-metadata.json && \
-        mv data-products/case-death-rr-state.csv ../data.csv && \
+          data-products/case-death-rr-boost-hosp-state-metadata.json && \
+        mv data-products/case-death-rr-boost-hosp-state.csv ../data.csv && \
         mv data-products/jhu-states-rejects.csv ../rejects.csv && \
-        mv data-products/case-death-rr-state-metadata.json ../metadata.json
+        mv data-products/case-death-rr-boost-hosp-state-metadata.json ../metadata.json
       '''
+    else
+      """
+      echo "Using inputs from url $params.inputUrl"
+      echo "Expecting .tar.gz archive with files data.csv, metadata.json, rejects.csv"
+      wget -O inputs.tar.gz "$params.inputUrl" && \
+        mkdir custom-inputs && \
+        tar -C custom-inputs -xzvf inputs.tar.gz && \
+        mv custom-inputs/{data.csv,metadata.json,rejects.csv} .
+      """
 
     stub:
     """
     echo "Running stub method"
     git clone --depth 1 https://github.com/covidestim/covidestim-sources && \
       cd covidestim-sources && \
-      mv example-output/case-death-rr-state.csv ../data.csv && \
-      mv example-output/case-death-rr-state-metadata.json ../metadata.json && \
+      git checkout hospitalizations-states && \
+      mv example-output/case-death-rr-boost-hosp-state.csv ../data.csv && \
+      mv example-output/case-death-rr-boost-hosp-state-metadata.json ../metadata.json && \
       mv example-output/jhu-states-rejects.csv ../rejects.csv
     """
 }

@@ -4,6 +4,11 @@ process runTractSampler {
     cpus 3
     memory '3 GB' // Currently unsure of exact memory needs. At least 800MB
 
+    secret 'COVIDESTIM_DBSTAN_HOST'
+    secret 'COVIDESTIM_DBSTAN_DBNAME'
+    secret 'COVIDESTIM_DBSTAN_USER'
+    secret 'COVIDESTIM_DBSTAN_PASS'
+
     // Retry with stepped timelimits
     time          { params.time[task.attempt - 1] }
     errorStrategy { task.attempt == params.time.size() ? 'ignore' : 'retry' }
@@ -27,98 +32,26 @@ process runTractSampler {
         path 'produced_metadata.json', emit: metadata
         path "${task.tag}.RDS" optional !params.raw
 
-    shell:
-    '''
-    #!/usr/local/bin/Rscript
-    library(tidyverse); library(covidestim)
-
-    runner          <- purrr::quietly(covidestim::run)
-    runnerOptimizer <- purrr::quietly(covidestim::runOptimizer)
-
-    d <- read_csv(
-      "!{tractData}",
-      col_types = cols(
-        date = col_date(),
-        !{params.key} = col_character(),
-        .default = col_number() # covers cases/deaths/fracpos/volume/RR/vaccinated
-      )
-    ) %>% 
-    filter(date < as.Date("2021-09-01")) %>% 
-    group_by(!{params.key})
-
-    metadata <- jsonlite::read_json("!{metadata}", simplifyVector = T)
-
-    print("Tracts in this process:")
-    print(pull(d, !{params.key}) %>% unique)
-
-    allResults <- group_map(d, function(tractData, groupKeys) {
-
-      region <- groupKeys[["!{params.key}"]]
-
-      d_cases  <- select(tractData, date, observation = cases)
-      d_deaths <- select(tractData, date, observation = deaths)
-      d_rr    <- select(tractData, date, observation = RR)
-      d_vaccinated <- select(tractData, date, observation = vaccinated)
-
-      cfg <- covidestim(ndays    = nrow(tractData),
-                        seed     = sample.int(.Machine$integer.max, 1),
-                        region   = region,
-                        pop_size = get_pop(region),
-                        pop_under12  = get_pop_under12(region)) +
-        input_cases(d_cases) +
-        input_deaths(d_deaths) +
-        input_rr(d_rr) +
-        input_vaccinations(d_vaccinated)
-
-      print(cfg)
-      resultOptimizer <- runnerOptimizer(cfg, cores = 1, tries = 10)
-   
-      run_summary <- summary(resultOptimizer$result)
-      warnings    <- resultOptimizer$warnings
-      opt_vals    <- resultOptimizer$result$opt_vals
-
-      # If it's the last attempt
-      if ("!{task.attempt == params.time.size()}" == "true" &&
-          "!{params.alwayssample}" == "false") {
-        return(list(
-          run_summary = bind_cols(!{params.key} = region, run_summary),
-          warnings    = bind_cols(!{params.key} = region, warnings = warnings),
-          opt_vals    = bind_cols(!{params.key} = region, optvals  = opt_vals),
-          method      = bind_cols(!{params.key} = region, method   = "optimizer"),
-          raw         = resultOptimizer
-        ))
-      }
-
-      result <- runner(cfg, cores = !{task.cpus})
- 
-      run_summary <- summary(result$result)
-      warnings    <- result$warnings
-
-      # Error on treedepth warning, or any divergent transitions warning
-      # indicating >= 10 divergent transitions
-      if (any(str_detect(warnings, 'treedepth')) ||
-          any(str_detect(warnings, ' [0-9]{2,} divergent')))
-        quit(status=1)
-
-      return(list(
-        run_summary = bind_cols(!{params.key} = region, run_summary),
-        warnings    = bind_cols(!{params.key} = region, warnings = warnings),
-        opt_vals    = tibble(!{params.key} = region,    optvals = numeric()),
-        method      = bind_cols(!{params.key} = region, method = "sampler"),
-        raw         = result
-      ))
-    })
-
-    write_csv(purrr::map(allResults, 'run_summary') %>% bind_rows, 'summary.csv')
-    write_csv(purrr::map(allResults, 'warnings')    %>% bind_rows, 'warning.csv')
-    write_csv(purrr::map(allResults, 'opt_vals')    %>% bind_rows, 'optvals.csv')
-    write_csv(purrr::map(allResults, 'method')      %>% bind_rows, 'method.csv')
-
-    jsonlite::write_json(metadata, 'produced_metadata.json', null = "null")
-
-    if ("!{params.raw}" == "true")
-      saveRDS(purrr::map(allResults, 'raw'), "!{task.tag}.RDS")
-    '''
+    script:
+    attempts      = params.time.size() - task.attempt + 1
+    dbstan_insert = params.insertDbstan ? "--dbstan-insert" : ""
+    save_raw      = params.raw ? "--save-raw"      : ""
+    raw_location  = params.raw ? "${task.tag}.RDS" : ""
+    """
+    covidestim-batch \
+      --input $tractData \
+      --key $params.key \
+      --metadata $metadata \
+      --attempts $attempts \
+      --cpus $task.cpus \
+      --save-summary summary.csv \
+      --save-warning warning.csv \
+      --save-optvals optvals.csv \
+      --save-method  method.csv \
+      --save-metadata produced_metadata.json \
+      $dbstan_insert \
+      $save_raw $raw_location
+    """
 }
 
 process runTractOptimizer {
@@ -127,10 +60,14 @@ process runTractOptimizer {
     cpus 1
     memory '3 GB' // Currently unsure of exact memory needs. At least 800MB
 
-    time '6h'
+    time {
+        params.ngroups == 10000000 ?
+            20.seconds :
+            20.seconds * 3300 / (params.ngroups as int)
+    }
 
-    errorStrategy "retry"
-    maxRetries 1
+    errorStrategy "ignore"
+    // maxRetries 1
 
     // Files from `splitTractData` are ALWAYS named by the tract they
     // represent, i.e. state name or county FIPS. We can get the name of the
@@ -150,93 +87,23 @@ process runTractOptimizer {
         path 'produced_metadata.json', emit: metadata
         path "${task.tag}.RDS" optional !params.raw
 
-    shell:
-    '''
-    #!/usr/local/bin/Rscript
-    library(tidyverse); library(covidestim)
-
-    runner <- purrr::quietly(covidestim::runOptimizer)
-
-    d <- read_csv(
-      "!{tractData}",
-      col_types = cols(
-        date = col_date(),
-        !{params.key} = col_character(),
-        .default = col_number() # covers cases/deaths/fracpos/volume/RR/vaccinated
-      )
-    ) %>%
-      group_by(!{params.key})
-
-    metadata <- jsonlite::read_json("!{metadata}", simplifyVector = T)
-
-    print("Tracts in this process:")
-    print(pull(d, !{params.key}) %>% unique)
-
-    allResults <- group_map(d, function(tractData, groupKeys) {
-
-      region <- groupKeys[["!{params.key}"]]
-      regionMetadata <- filter(metadata, !{params.key} == region)
-
-      print(paste0("Beginning ", region))
-
-      d_cases      <- select(tractData, date, observation = cases)
-      d_deaths     <- select(tractData, date, observation = deaths)
-      d_rr         <- select(tractData, date, observation = RR)
-      d_vaccinated <- select(tractData, date, observation = vaccinated)
-
-      if (is.null(regionMetadata$nonReportingBegins) || is.na(regionMetadata$nonReportingBegins)) {
-        inputDeaths <- input_deaths(d_deaths)
-      } else {
-        message("Clipping deaths!")
-        inputDeaths <- input_deaths(
-          d_deaths,
-          lastDeathDate = as.Date(regionMetadata$nonReportingBegins)
-        )
-      }
-
-      cfg <- covidestim(ndays    = nrow(tractData),
-                        seed     = sample.int(.Machine$integer.max, 1),
-                        region   = region,
-                        pop_size = get_pop(region),
-                        pop_under12  = get_pop_under12(region)) +
-        input_cases(d_cases) +
-        inputDeaths +
-        input_rr(d_rr) +
-        input_vaccinations(d_vaccinated)
-
-      print("Configuration:")
-      print(cfg)
-
-      result <- runner(cfg, cores = 1, tries = 10)
-      print("Warning messages from optimizer:")
-      print(result$warnings)
-      print("Messages from optimizer:")
-      print(result$messages)
-
-      run_summary <- summary(result$result)
-      warnings    <- result$warnings
-
-      print("Summary:")
-      print(run_summary)
-
-      list(
-        run_summary = bind_cols(!{params.key} = region, run_summary),
-        warnings    = bind_cols(!{params.key} = region, warnings = warnings),
-        opt_vals    = bind_cols(!{params.key} = region, optvals = result$result$opt_vals),
-        method      = bind_cols(!{params.key} = region, method = 'optimizer'),
-        raw         = result
-      )
-    })
-
-    write_csv(purrr::map(allResults, 'run_summary') %>% bind_rows, 'summary.csv')
-    write_csv(purrr::map(allResults, 'warnings')    %>% bind_rows, 'warning.csv')
-    write_csv(purrr::map(allResults, 'opt_vals')    %>% bind_rows, 'optvals.csv')
-    write_csv(purrr::map(allResults, 'method')      %>% bind_rows, 'method.csv')
-
-    jsonlite::write_json(metadata, 'produced_metadata.json', null = "null")
-
-    if ("!{params.raw}" == "true")
-      saveRDS(purrr::map(allResults, 'raw'), "!{task.tag}.RDS")
-    '''
+    script:
+    save_raw     = params.raw ? "--save-raw"      : ""
+    raw_location = params.raw ? "${task.tag}.RDS" : ""
+    """
+    covidestim-batch \
+      --input $tractData \
+      --key $params.key \
+      --metadata $metadata \
+      --attempts 1 \
+      --cpus $task.cpus \
+      --always-optimize \
+      --save-summary  summary.csv \
+      --save-warning  warning.csv \
+      --save-optvals  optvals.csv \
+      --save-method   method.csv \
+      --save-metadata produced_metadata.json \
+      $save_raw $raw_location
+    """
 }
 

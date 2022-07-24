@@ -19,45 +19,17 @@ process publishCountyResults {
     publishDir "$params.webdir/$params.date", enabled: params.s3pub
     publishDir "$params.webdir/stage",  enabled: params.s3pub, overwrite: true
 
+    script:
     """
     # Create a WebPack file for serving to web browsers
-    serialize.R -o summary.pack --pop /opt/webworker/data/fipspop.csv $allResults && \
-      gzip summary.pack
+    covidestim-serialize-counties \
+      -o summary.pack \
+      --pop /opt/webworker/data/fipspop.csv \
+      $allResults && \
+    gzip -f summary.pack
 
     # Gzip the estimates
-    cat $allResults > estimates.csv
-    gzip -k estimates.csv
-
-    if [ "$params.PGCONN" != "null" ]; then
-      # Add a run.date column and insert the results into the database.
-      # `tagColumn` is an awk script from the `webworker` container.
-      tagColumnAfter 'run.date' "$params.date" < $allResults | \
-        psql -f /opt/webworker/scripts/copy_county_estimates_dev.sql "$params.PGCONN"
-
-      # Do the same for warnings, but prepend the 'run.date' column because of a
-      # preexisting poor choice of SQL table structure..
-      tagColumnBefore 'run.date' "$params.date" < $allWarnings | \
-        psql -f /opt/webworker/scripts/copy_warnings_dev.sql "$params.PGCONN"
-
-      # Do the same for rejects, but prepend the 'run.date' column because of a
-      # preexisting poor choice of SQL table structure..
-      tagColumnBefore 'run.date' "$params.date" < $rejects | \
-        psql -f /opt/webworker/scripts/copy_rejects.sql "$params.PGCONN"
-
-      # Copy all metadata
-      jq --arg date "$params.date" -r \
-        'map([.fips, \$date, (. | tojson)] | @tsv) | .[]' < $metadata | \
-        psql -f /opt/webworker/scripts/copy_county_run_info.sql "$params.PGCONN"
-
-      # And finally, copy the input data
-      # Note, the RR column is being ELIMINATED here because it would conflict
-      # with the schema of the api.inputs table
-      tagColumnAfter 'run.date' "$params.date" < $inputData | \
-        cut -d, -f1,2,3,4,6 | \
-        psql -f /opt/webworker/scripts/copy_inputs_dev.sql "$params.PGCONN"
-    else
-      echo "PGCONN not supplied, DB inserts skipped."
-    fi
+    cp $allResults estimates.csv && gzip -kf estimates.csv
     """
 }
 
@@ -83,49 +55,69 @@ process publishStateResults {
     publishDir "$params.webdir/$params.date/state", enabled: params.s3pub
     publishDir "$params.webdir/stage/state", enabled: params.s3pub, overwrite: true
 
+    script:
     """
-    RtLiveConvert.R \
+    covidestim-serialize-states \
       -o summary.pack \
       --pop /opt/webworker/data/statepop.csv \
       --input $inputData \
       --method $method \
       $allResults && \
-      gzip summary.pack
+      gzip -f summary.pack
 
-    cat $allResults > estimates.csv
-    gzip -k estimates.csv
-
-    if [ "$params.PGCONN" != "null" ]; then
-
-      # Add a run.date column and insert the results into the database.
-      # `tagColumn` is an awk script from the `webworker` container.
-      tagColumnAfter 'run.date' "$params.date" < $allResults | \
-        psql -f /opt/webworker/scripts/copy_state_estimates.sql "$params.PGCONN"
-
-      # Do the same for rejects, but prepend the 'run.date' column because of a
-      # preexisting poor choice of SQL table structure..
-      tagColumnBefore 'run.date' "$params.date" < $rejects | \
-        psql -f /opt/webworker/scripts/copy_state_rejects.sql "$params.PGCONN"
-
-      # Copy all metadata. The `jq` call is transforming the JSON metadata
-      # into TSV, which allows a "state" and "date" to be associated with
-      # each JSON record.
-      jq --arg date "$params.date" -r \
-        'map([.state, \$date, (. | tojson)] | @tsv) | .[]' < $metadata | \
-        psql -f /opt/webworker/scripts/copy_state_run_info.sql "$params.PGCONN"
-
-      # And finally, copy the input data
-      # Note, the fracpos,volume,RR columns are being ELIMINATED here because
-      # it would conflict with the schema of the api.state_input_data table
-      tagColumnAfter 'run.date' "$params.date" < $inputData | \
-        cut -d, -f1,2,3,4,8 | \
-        psql -f /opt/webworker/scripts/copy_state_input_data.sql "$params.PGCONN"
-
-      # Now, refresh the `api.state_performance` view
-      psql -c "REFRESH MATERIALIZED VIEW api.state_performance" "$params.PGCONN"
-    else
-      echo "PGCONN not supplied, DB inserts skipped."
-    fi
+    cp $allResults estimates.csv && gzip -kf estimates.csv
     """
+}
+
+process insertResults {
+
+    container 'covidestim/webworker:latest'
+    time '15m'
+    memory '4GB'
+
+    secret 'COVIDESTIM_JWT'
+
+    input:
+        file allResults
+        file inputData
+        file metadata
+        file method
+    output:
+        file 'mapping.csv' optional !params.insertApi
+
+    script:
+    if (params.insertApi == true && params.key == "state")
+        """
+        covidestim-insert \
+          --summary  "$allResults" \
+          --input    "$inputData" \
+          --metadata "$metadata" \
+          --key       $params.key \
+          --run-date  $params.date \
+          --method   "$method" \
+          --save-mapping mapping.csv
+        """
+
+    // No need for `--method`, these are all optimized
+    else if (params.insertApi == true && params.key == "fips")
+        """
+        covidestim-insert \
+          --summary  "$allResults" \
+          --input    "$inputData" \
+          --metadata "$metadata" \
+          --key       $params.key \
+          --run-date  $params.date \
+          --save-mapping mapping.csv
+        """
+    
+    else if (params.insertApi == true)
+        error "params.key was not state/fips, value: ${params.key}"
+
+    else if (params.insertApi == false)
+        """
+        echo 'params.insertApi == false, skipping DB inserts'
+        """
+    else
+        error "params.insertApi was not true/false, value: ${params.insertApi}"
 }
 

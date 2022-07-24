@@ -10,6 +10,7 @@ process makeSyntheticIntervals {
       file data
       file metadata
       file backup
+
     output:
       path 'synthetic_summary.csv', emit: summary
       path 'produced_metadata.json', emit: metadata
@@ -17,14 +18,16 @@ process makeSyntheticIntervals {
 
     publishDir "$params.webdir/synthetic-backup", enabled: params.s3pub, pattern: 'newBackup.RDS', saveAs: { 'backup.RDS' }
 
+    script:
+    minSampled = params.n == -1 ? 10 : 1
     """
-    makeSyntheticIntervals.R \
+    covidestim-intervals \
       -o synthetic_summary.csv \
       --statepop /opt/webworker/data/statepop.csv \
       --backup $backup \
       --writeBackup newBackup.RDS \
-      --vars infections,Rt,cum.incidence \
-      --minSampled 10 \
+      --vars infections,r_t,infections_cumulative \
+      --minSampled $minSampled \
       --metadata $metadata \
       --writeMetadata produced_metadata.json \
       $data

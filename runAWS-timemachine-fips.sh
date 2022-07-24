@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export NXF_ENABLE_SECRETS=true
+
 # This script is for TESTING ONLY. In particular, the following changes should
 # be made when transitioning from testing to production:
 #

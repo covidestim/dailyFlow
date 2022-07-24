@@ -3,6 +3,8 @@
 #SBATCH --mail-user=marcus.russi@yale.edu
 #SBATCH --mail-type=ALL
 
+export NXF_ENABLE_SECRETS=true
+
 # This script is for TESTING ONLY. In particular, the following changes should
 # be made when transitioning from testing to production:
 #
@@ -29,7 +31,7 @@ nextflow run covidestim/dailyFlow \
   --s3pub true \
   -latest \
   --ngroups 150 \
-  -profile "slurm,counties,farnam" \
+  -profile "slurm,counties" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
   --raw false \
