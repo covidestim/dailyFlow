@@ -2,60 +2,116 @@
 
 This repository contains a Nextflow workflow used to orchestrate state- and county-level runs on AWS Batch and the Yale Center for Research Computing clusters. The workflow takes care of the following steps:
 
-- Acquiring and cleaning input cases and death data for all counties and states
+- Cleaning for all counties and states, using scripts from [`covidestim-sources`](https://github.com/covidestim/covidestim-sources).
 - Performing a model run for each county or state using said input data
-- Combining all of these results together to create various representations, inluding the WebPack file served to the browser
-- Making the results available on AWS S3, where they eventually are manually reviewed and made available on the public-facing website
+- Aggregating these results
+- Making the results available to the public by inserting them into our database, and by generating static files used on our public website.
 
-Nextflow takes care of:
+Nextflow:
 
-- Managing the various Singularity (YCRC) and Docker (AWS Batch/ECR) containers that are used for these operations
-- Passing data between tasks
-- Producing logs of what happened
-- Automatic retry when model runs timeout or fail
+- Manages and executes the Singularity (on YCRC) and Docker (local execution / AWS) containers that are used to run different scripts
+- Passes data between different Nextflow processes
+- Produces logs of what happened
+- In certain situations, reruns models when they timeout or fail
+
+## Getting started
+
+### Configuration
+
+Install Nextflow at [nextflow.io](https://www.nextflow.io/). You need at least `21.09.0-edge` because we use the Secrets feature. Nextflow will take care of downloading all containers from [Docker Hub](https://hub.docker.com/u/covidestim) the first time you run this pipeline. Next, take note of the following configuration options. You'll want to use different configuration options depending on whether you're developing locally, testing on the cluster, or deploying production code.
+
+**No API**
+
+This is great for making changes to the pipeline that have nothing to do with persisting data.
+
+| option         | value   |
+| -------------- | ------- |
+| `--insertApi`  | `false` |
+
+**Local API**
+
+You can easily spin up a local database and API by cloning [covidestim/db](https://github.com/covidestim/db) and running `docker-compose up` from the root of that repository. This will give you a database and API that matches our production schema.
+
+To generate a JWT for your local API so that you can define the mandatory Nextflow Secret `COVIDESTIM_JWT`, follow steps 2 and 3 of [this PostgREST tutorial](https://postgrest.org/en/stable/tutorials/tut1.html#step-2-make-a-secret).
+
+| option         | value   |
+| -------------- | ------- |
+| `-profile`     | `api_local` |
+| Nextflow Secret `COVIDESTIM_JWT` | defined |
+
+**Test API**
+
+We run a test API server at https://api2-test.covidestim.org. Its schema is the same as the production database, but there is less model data stored in it. You'll need to generate or be provided a JWT token to insert runs via this API.
+
+| option         | value   |
+| -------------- | ------- |
+| `-profile`     | `api_local` |
+| Nextflow Secret `COVIDESTIM_JWT` | defined |
+
+**Production API**
+
+This is https://api2.covidestim.org. JWT token also must be generated or provided.
+
+| option         | value   |
+| -------------- | ------- |
+| `-profile`     | `api_local` |
+| Nextflow Secret `COVIDESTIM_JWT` | defined |
+
+**Enabling dbstan integration**
+
+Keep in mind that dbstan inserts take up a lot of space in the database, and we don't yet automatically delete old dbstan runs. Enabling the dbstan integration is not necessary to run the pipeline for test or production.
+
+| option         | value   |
+| -------------- | ------- |
+| `-profile`     | `dbstan_enable` |
+| Nextflow Secret `COVIDESTIM_DBSTAN_HOST` | defined, must be hostname of Postgres server on port 5432 |
+| Nextflow Secret `COVIDESTIM_DBSTAN_DBNAME` | defined, Postgres db name |
+| Nextflow Secret `COVIDESTIM_DBSTAN_USER` | defined, Postgres user, see [here](https://github.com/covidestim/dbstan/blob/master/init/init.sql) (`dbstan_writer`) |
+| Nextflow Secret `COVIDESTIM_DBSTAN_PASS` | defined, Postgres user password |
+
+### Runtime options
+
+There are parameters defined in `main.nf` which can be invoked at runtime in the CLI (`nextflow run --arg1 val1 --arg2 val2 ...`). The available CLI options are:
+
+- `-profile`
+  - Specify `states` or `counties`
+  - Specify `local` or `slurm`
+  - See **Configuration** section above for API/dbstan profiles.
+- `--inputUrl <url>`: This bypasses the usual data-cleaning process, and instead passes premade input data to the instances of the model. `<url>` must be a `.tar.gz` file containing `data.csv`, `metadata.json`, and `rejects.csv`. These files must have the same schema as would be produced in the normal data-cleaning process, but need not contain all geographies.
+- `--ngroups`: When you have more geographies to model than you have hourly submissions to the SLURM scheduler, set this to cause geographies to be batched together into processes that contain multiple geographies.
+- `--raw`: This will save all `covidestim-result` objects to `.RDS` files, using the name of each geography as the filename, or the group id, if `--ngroups` is used.
+- `--splicedate`: Deprecated.
+- `--testtracts`: Only run the "test tracts," a selection of ~300 counties and states
+- `--alwaysoptimize`: Always use BFGS
+- `--alwayssample`: Always sample, never fallback to BFGS
+- `--n <number>`: Run the first `n` counties or states (in no particular order)
+- `--branch <tag>`: Use the Docker Hub container with tag = `<tag>` when running the model. Note that the Github branch `master` will exist as the Docker Hub container with tag = `latest`.
+- `--key <state|fips>`: **IMPORTANT: must be specified at runtime**
+- `--s3pub`: Publish results to AWS S3, only works if credentialed
 
 ## FAQ
 
 **How do I change the number of attempts, and their length?**
 
-Change `nextflow.config` by modifying `testFast`, `states`, `statesAggressive`, or `counties` to have a different value for `params.time`. Alternatively, write your own profile in addition to the ones mentioned above.
+Change `nextflow.config` by modifying the `states` and `counties` profiles.
 
 **How do I change how Stan is invoked?**
 
-The `covidestim::covidestim()` function takes several argument which are passed to `rstan::sampling()`, such as `max_treedepth` and `adapt_delta`. If the parameter you wish to modify is an argument of `covidestim::covidestim()`, then modify `src/modelrunners.nf` so that that the function is called differently. If it's *not* an argument, change how `covidestim::run()` is called, because it uses dots (`...`) syntax, which is passed on to `rstan::sampling()`.
+See [covidestim-batch](https://github.com/covidestim/covidestim/blob/master/exec/batch.R) for available CLI options. Otherwise, modify that script yourself, and rebuild a local `webworker` container so that Nextflow excecutes your modified script.
 
 **How do I pass made-up case/death data to the model?**
 
-This workflow was never built to support that; either write your own process definition, or run the model manually.
+Use the `--inputUrl` CLI flag. Alternatively, use the model outside the Nextflow workflow, which may be easier.
 
-**How do I run using a different version of the model?**
+**How do I run using an updated or different version of the model? Or new version of the webworker container**
 
-Invoke the `--branch` flag when issuing the `nextflow run` command in the terminal. `<branch>` must be the name of a tag which exists on [Docker Hub](https://hub.docker.com/r/covidestim/covidestim). If there doesn't exist a container (tag) for that branch or tag, you'll need to push a new branch or tag to `covidestim/covidestim`, and then set up a rule in Docker Hub so that it auto-builds that branch or tag. You need special privileges to set these rules.
+For running a custom model version, invoke the `--branch` flag when issuing the `nextflow run` command in the terminal. `<branch>` must be the name of a tag which exists on [Docker Hub](https://hub.docker.com/r/covidestim/covidestim). If there doesn't exist a container (tag) for that branch or tag, you'll need to push a new branch or tag to the GitHub remote at `covidestim/covidestim`, and then set up a rule in Docker Hub so that it auto-builds that branch or tag. You need special privileges to set these rules. You can also build a container locally, and push it to Docker Hub using `docker push`.
 
-Beware that Singularity, which (basically) executes these containers in YCRC envionments, caches containers. If you push a new commit, and Docker Hub builds it, the cache will not invalidate and subsequently update the relevant container. `rm -rf work/singularity` will solve this.
+*Important*: For running a *new* model that is now the `HEAD` of the branch currently being used, you need to ensure that:
 
-**What other customizations are available?**
-
-There are various arguments defined in `main.nf` which are invoked at runtime in the CLI (`nextflow run --arg1 val1 --arg2 val2 ...`). You can:
-
-- `--testtracts`: Only run the "test tracts," a selection of ~300 counties and states
-  
-- `--PGCONN <conn>`: Specify the connection to the production results database, if you have it
-  
-- `--timemachine <date:YYYY-MM-DD>`: Run the model using archived data from a particular day
-  
-- `--alwaysoptimize`: Always use BFGS
-  
-- `--alwayssample`: Always sample, never fallback to BFGS
-  
-- `--n <number>`: Run the first `n` counties or states (in no particular order)
-  
-- `--branch <tag>`: Use the Docker Hub container with tag = `<tag>` when running the model
-  
-- `--key <state|fips>`: **IMPORTANT: must be specified at runtime**
-  
-- `--s3pub`: Publish results to AWS S3, only works if credentialed
-  
+1. The new commit successfully pushed to `covidestim/covidestim`.
+2. It was successfully built and tagged on Docker Hub (either autobuilt, or pushed to Docker Hub).
+3. The local registry has the container. Locally, run `docker pull covidestim/covidestim:TAG`, and on the cluster, run `rm -rf work/singularity`, forcing Singularity to rebuilt the Docker Hub-sourced container the next time Nextflow executes.
 
 ## File structure/Processes
 
@@ -64,9 +120,6 @@ The file structure is as follows:
 - `main.nf`: The workflow
 - `src/*.nf`: All of the Nextflow ["processes"](https://www.nextflow.io/docs/edge/process.html)
 - `nextflow.config`: [Nextflow configuration](https://www.nextflow.io/docs/edge/config.html) for different execution environments (YCRC/AWS Batch) and levels of geography (counties/states)
-- `runAWS.sh`: Starts an all-county run on AWS Batch. Runs at 1:00am EDT to line up with the typical 12:50am EDT [JHU commit](https://github.com/CSSEGISandData/COVID-19/commits/master/csse_covid_19_data/csse_covid_19_time_series)
-- `runGrace.sh`: Starts an all-state run on YCRC's Grace cluster. Also runs at 1:00am EDT daily.
-- `s3-pack-push.sh`: The Nextflow workflow will place daily output files in the `s3://covidestim/stage/` prefix (directory). This script copies them to the `s3://covidestim/latest` directory, and makes them public, which effectively updates the website.
 
 ### `main.nf`
 
