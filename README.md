@@ -14,13 +14,15 @@ Nextflow:
 - Produces logs of what happened
 - In certain situations, reruns models when they timeout or fail
 
-## Workflow
+## Workflow diagrams
 
 ### States
 
 ![State workflow](/images/states.drawio.png)
 
 ### Counties
+
+![County workflow](/images/counties.drawio.png)
 
 ## Getting started
 
@@ -102,6 +104,31 @@ There are parameters defined in `main.nf` which can be invoked at runtime in the
 - `--alwayssample`: Always sample, never fallback to BFGS
 - `--n <number>`: Run the first `n` counties or states (in no particular order)
 - `--s3pub`: Publish results to AWS S3, only works if credentialed
+
+### Examples
+
+**County production run, local**
+
+Run the county pipeline locally, inserting the results into the database, and
+uploading static files to S3. Available in repository as
+`scripts/runLocal-counties-prod.sh`.
+
+```bash
+#!/usr/bin/env bash
+export NXF_ENABLE_SECRETS=true
+
+# NOTE: Execute this from the repository root.
+
+branch="latest"
+key=fips
+date=$(date +%Y-%m-%d)
+
+nextflow run . \
+  --key $key -profile "counties,local_prod,api_prod" \
+  --branch $branch \
+  --outdir $date \
+  --date $date 
+```
 
 ## FAQ
 

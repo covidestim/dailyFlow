@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-#SBATCH --time=720
+#SBATCH --time=300
 #SBATCH --mail-user=marcus.russi@yale.edu
 #SBATCH --mail-type=ALL
-
 export NXF_ENABLE_SECRETS=true
+
+# Note: Execute this from the repository root.
 
 # This script is for TESTING ONLY. In particular, the following changes should
 # be made when transitioning from testing to production:
@@ -20,22 +21,18 @@ export NXF_ENABLE_SECRETS=true
 #   to find the exact syntax
 
 date="$(date '+%Y-%m-%d')"
-branch="master"
-key=fips
+branch="latest"
+key=state
 
 module load awscli
 
 # Targets YCRC/Grace
-nextflow run covidestim/dailyFlow \
-  -r "master" \
-  --s3pub true \
-  -latest \
-  --ngroups 150 \
-  -profile "slurm,counties" \
+nextflow run . \
+  --s3pub false \
+  -profile "slurm,states" \
   -N "marcus.russi@yale.edu" \
   --branch $branch \
   --raw false \
   --key $key \
-  --outdir "s3://nf-test-results/$date" \
-  --date $date \
-  --PGCONN "$(cat SECRET_RDS_CREDENTIALS)"
+  --outdir "farnam-states-01" \
+  --date $date
