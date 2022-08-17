@@ -73,10 +73,18 @@ Keep in mind that dbstan inserts take up a lot of space in the database, and we 
 
 There are parameters defined in `main.nf` which can be invoked at runtime in the CLI (`nextflow run --arg1 val1 --arg2 val2 ...`). The available CLI options are:
 
+**Required**
+
 - `-profile`
   - Specify `states` or `counties`
   - Specify `local` or `slurm`
   - See **Configuration** section above for API/dbstan profiles.
+- `--branch <tag>`: Use the Docker Hub container with tag = `<tag>` when running the model. Note that the Github branch `master` will exist as the Docker Hub container with tag = `latest`.
+- `--key <state|fips>`: **IMPORTANT: must be specified at runtime**
+-- `--date YYYY-MM-DD`: Sets the nominal "run date" for the run. Does not necessarily need to be the same as today's date.
+  
+**Optional**
+
 - `--inputUrl <url>`: This bypasses the usual data-cleaning process, and instead passes premade input data to the instances of the model. `<url>` must be a `.tar.gz` file containing `data.csv`, `metadata.json`, and `rejects.csv`. These files must have the same schema as would be produced in the normal data-cleaning process, but need not contain all geographies.
 - `--ngroups`: When you have more geographies to model than you have hourly submissions to the SLURM scheduler, set this to cause geographies to be batched together into processes that contain multiple geographies.
 - `--raw`: This will save all `covidestim-result` objects to `.RDS` files, using the name of each geography as the filename, or the group id, if `--ngroups` is used.
@@ -85,8 +93,6 @@ There are parameters defined in `main.nf` which can be invoked at runtime in the
 - `--alwaysoptimize`: Always use BFGS
 - `--alwayssample`: Always sample, never fallback to BFGS
 - `--n <number>`: Run the first `n` counties or states (in no particular order)
-- `--branch <tag>`: Use the Docker Hub container with tag = `<tag>` when running the model. Note that the Github branch `master` will exist as the Docker Hub container with tag = `latest`.
-- `--key <state|fips>`: **IMPORTANT: must be specified at runtime**
 - `--s3pub`: Publish results to AWS S3, only works if credentialed
 
 ## FAQ
