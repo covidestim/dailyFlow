@@ -18,7 +18,7 @@ Nextflow:
 
 ### States
 
-![State workflow](/images/states/drawio.png)
+![State workflow](/images/states.drawio.png)
 
 ### Counties
 
