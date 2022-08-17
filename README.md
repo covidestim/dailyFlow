@@ -3,9 +3,9 @@
 This repository contains a Nextflow workflow used to orchestrate state- and county-level runs on AWS Batch and the Yale Center for Research Computing clusters. The workflow takes care of the following steps:
 
 - Cleaning for all counties and states, using scripts from [`covidestim-sources`](https://github.com/covidestim/covidestim-sources).
-- Performing a model run for each county or state using said input data
+- Performing a model run for each county or state using said input data, using the [`covidestim`](https://github.com/covidestim/covidestim) package.
 - Aggregating these results
-- Making the results available to the public by inserting them into our database, and by generating static files used on our public website.
+- Making the results available to the public by inserting them into our database, and by generating static files used on our public website, using scripts from [`webworker`](https://github.com/covidestim/webworker).
 
 Nextflow:
 
@@ -186,17 +186,17 @@ See [covidestim-batch](https://github.com/covidestim/covidestim/blob/master/exec
 
 Use the `--inputUrl` CLI flag (see [Optional Flags](#optional-flags)). Alternatively, use the model outside the Nextflow workflow, which may be easier in some circumstances, like testing new kinds of input data.
 
-**How do I run the workflow using an updated or different version of the model? Or a new version of the `webworker` container**
+**How do I run the workflow using an updated or different version of the model? Or a new version of the `webworker` container?**
 
 For running a custom model version, invoke the `--branch` flag when issuing the `nextflow run` command in the terminal. `<branch>` must be the name of a tag which exists on [Docker Hub](https://hub.docker.com/r/covidestim/covidestim). If there doesn't exist a container (tag) for that branch or tag, you'll need to push a new branch or tag to the GitHub remote at `covidestim/covidestim`, and then set up a rule in Docker Hub so that it auto-builds that branch or tag. You need special privileges to set these rules. You can also build a container locally, and push it to Docker Hub using `docker push`.
 
 For running a custom webworker container that doesn't have the `latest` tag on GitHub, you'll need to modify the `container` directives in all process definitions that list `covidestim/webworker:latest` as their container. To find which processes do this, run `find main.nf src/ -type f | xargs grep --color container` from the repository root.
 
-*Important*: For running a *new* model that is now the `HEAD` of the branch currently being used, you need to ensure that three things have happened:
+*Important*: For running a *new* model that is now the `HEAD` of the branch currently being used, you need to ensure that three things have happened, lest Nextflow run your old model version instead:
 
-1. The new commit successfully pushed to `covidestim/covidestim`.
-2. It was successfully built and tagged on Docker Hub (either autobuilt, or pushed to Docker Hub).
-3. The local registry has the container. Locally, run `docker pull covidestim/covidestim:TAG`, and on the cluster, run `rm -rf work/singularity`, forcing Singularity to rebuild the Docker Hub-sourced container the next time Nextflow executes.
+1. The new commit must have been successfully pushed to `covidestim/covidestim`.
+2. It must have been built and tagged on Docker Hub (either autobuilt, or pushed to Docker Hub).
+3. The local registry must have the container. Locally, just run `docker pull covidestim/covidestim:TAG`. On  the cluster, run `rm -rf work/singularity`, which forces Singularity to rebuild the Docker Hub-sourced container the next time Nextflow executes.
 
 ## File structure/Processes
 
@@ -206,39 +206,3 @@ The file structure is as follows:
 - `src/*.nf`: All of the Nextflow ["processes"](https://www.nextflow.io/docs/edge/process.html)
 - `nextflow.config`: [Nextflow configuration](https://www.nextflow.io/docs/edge/config.html) for different execution environments (YCRC/AWS Batch) and levels of geography (counties/states)
 - `scripts/`: Example bash scripts to run the workflow in different ways.
-
-### `main.nf`
-
-Specifies the main workflow and the default Nextflow parameters. The main workflow selects a process to generate model input data (counties = `jhuData`, states = `jhuStateData`), and connects the output of the selected process to the rest of the pipeline. The main workflow emits the following values:
-
-- `summary`, a CSV of all model summaries
-  
-- `warning`, a CSV of all warnings from all model runs
-  
-- `optvals`, a CSV of the log-posteriors of all model runs performed using the BFGS algorithm
-  
-- `rejects`, a CSV of all counties or states which were rejected due to input data issues
-  
-`main.nf` references several processes which are defined in the `src/` directory: `jhuData`, `jhuStateData`, `runTractSampler`, `runTractOptimizer`, and auxillary processes `filterTestTracts`, `splitTractData`, `publishCountyResults`, `publishStateResults`.
-
-### process `jhuData`
-
-This is identical to `ctpData`, except that it cleans Johns Hopkins CSSE data at the county level. Since `covidestim-sources` references the JHU Git repo as a submodule, there are additional Git commands to bring the JHU submodule up to its `HEAD` commit on `origin/master`.
-
-### process `splitTractData`
-
-The cleaned input file is split by FIPS code or state name in preparation for being sent to `runTract`
-
-### process `runTractSampler`
-
-Runs the model for every county or state. The bulk of this process's definition is a short R script that reads the input data and performs the run. Note that when an RStan `treedepth` warning is present, the R script errors, which forces a rerun. Up to two reruns are allowed, as an attempt to catch counties or states that struggle to fit well, or fit within their timelimit. Raw (`RDS`) output can be saved if `params.raw` is set to `true`.
-
-Each county or state gets a certain number of tries to produce good results. This is set my `params.time`. On the last try, if the sampler has thus far failed to produce a good result, BFGS is run, and an optimized result is returned, rather than a sampled one.
-
-### process `runTractOptimizer`
-
-Similar to `runTractSampler`, but always uses the BFGS optimizer.
-
-### process `publishCountyResults` / `publishStateResults`
-
-Creates county/state results that are suitable for distribution online by gzipping the `summary.csv` file that results from a state or county run, and by creating the WebPack file that the website consumes. These files are copied out to AWS S3.
