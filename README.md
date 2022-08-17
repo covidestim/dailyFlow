@@ -24,7 +24,7 @@ Broadly speaking, a typical workflow execution produces state or county estimate
 
 Notes:
 
-- Broadcast and aggregation steps are generally handled through the use of Nextflow channel operators - see `main.nf`.
+- Broadcast and aggregation steps are generally handled through the use of Nextflow channel operators - see [`main.nf`](main.nf).
 - CLI options and [profiles](https://www.nextflow.io/docs/edge/config.html?highlight=profile#config-profiles) control various behaviors of each process.
 
 ### Counties
@@ -47,6 +47,8 @@ There are four different configurations of the API:
 - [Local API](#local-api) + optional [dbstan integration](#enabling-dbstan-integration)
 - [Test API](#test-api) + optional [dbstan integration](#enabling-dbstan-integration)
 - [Production API](#production-api) + optional [dbstan integration](#enabling-dbstan-integration)
+
+Most configurations require setting [Nextflow Secrets](https://www.nextflow.io/docs/edge/secrets.html). Be sure to read the Secrets documentation before proceeding.
 
 #### No API
 
@@ -85,9 +87,9 @@ This is https://api2.covidestim.org. JWT token must be generated or provided.
 | `-profile`     | `api_local` |
 | Nextflow Secret `COVIDESTIM_JWT` | defined |
 
-#### Enabling dbstan integration
+#### Enabling [dbstan](https://github.com/covidestim/dbstan) integration
 
-Keep in mind that dbstan inserts take up a lot of space in the database, and we don't yet automatically delete old dbstan runs. Enabling the dbstan integration is not necessary to run the pipeline for test or production.
+Keep in mind that `dbstan` inserts take up a lot of space in the database, and we don't yet automatically delete old dbstan runs. Enabling the dbstan integration is not necessary to run the pipeline for test or production.
 
 | option         | value   |
 | -------------- | ------- |
@@ -99,29 +101,30 @@ Keep in mind that dbstan inserts take up a lot of space in the database, and we 
 
 ### Runtime options
 
-There are parameters defined in `main.nf` which can be invoked at runtime in the CLI (`nextflow run --arg1 val1 --arg2 val2 ...`). The available CLI options are:
+There are parameters defined in `main.nf` which can be configured at runtime in the CLI (`nextflow run --arg1 val1 --arg2 val2 ...`). The available CLI options are:
 
 #### Required Flags
 
 - `-profile`
   - Specify `states` or `counties`
   - Specify `local` or `slurm`
-  - See **Configuration** section above for API/dbstan-specific profiles.
+  - See [Configuration](#database-configuration) section above for API/dbstan-specific profiles.
 - `--branch <tag>`: Use the Docker Hub container with tag = `<tag>` when running the model. Note that the GitHub branch `master` will exist as the Docker Hub container with tag = `latest`.
 - `--key <state|fips>`
--- `--date YYYY-MM-DD`: Sets the nominal "run date" for the run. Does not necessarily need to be the same as today's date. For example, if you are generating historical results, you would set `--date` to a date other than today's date.
+- `--date YYYY-MM-DD`: Sets the nominal "run date" for the run. Does not necessarily need to be the same as today's date. For example, if you are generating historical results, you would set `--date` to a date other than today's date.
   
 #### Optional Flags
 
-- `--inputUrl <url>`: This bypasses the usual data-cleaning process, and instead passes premade input data to the instances of the model. `<url>` must be a `.tar.gz` file containing `data.csv`, `metadata.json`, and `rejects.csv`. These files must have the same schema as would be produced in the normal data-cleaning process, but need not contain all geographies. *Hint:* An easy way to create these three files is to take the output of `jhuStateVaxData` or `combinedVaxData` and modify it to suit your needs.
+- `--inputUrl <url>`: This bypasses the usual data-cleaning process, and instead passes premade input data to the instances of the model. `<url>` point to a `.tar.gz` file containing `data.csv`, `metadata.json`, and `rejects.csv`. These files must have the same schema that would be produced by the normal data-cleaning process, but need not contain all geographies. *Hint:* An easy way to create these three files is to take the output of [`jhuStateVaxData`](src/inputs.nf) or [`combinedVaxData`](src/inputs.nf) and modify it to suit your needs, then run `tar -czf custom-inputs.tar.gz data.csv metadata.json rejects.csv`.
 - `--ngroups`: When you have more geographies to model than you have hourly submissions to the SLURM scheduler, set this to cause geographies to be batched together into processes that contain multiple geographies.
-- `--raw`: This will save all `covidestim-result` objects to `.RDS` files, using the name of each geography as the filename, or the group id, if `--ngroups` is used. This can take up a lot of space.
+- `--raw`: This will save all [`covidestim-result`](https://github.com/covidestim/covidestim/blob/85eae539efa482ff2aae515f3fa84b8886a861b1/R/covidestim.R#L483) objects to `.RDS` files, using the name of each geography as the filename, or the group id, if `--ngroups` is used. This can take up a lot of space. These objects are archival objects created by the Covidestim R package.
 - `--splicedate`: *Deprecated*.
 - `--testtracts`: *Deprecated*.
 - `--alwaysoptimize`: Always use BFGS
 - `--alwayssample`: Always sample, never fallback to BFGS
-- `--n <number>`: Run the first `n` counties or states (in no particular order)
+- `--n <number>`: Run the first `n` counties or states (in no particular order). Useful for testing.
 - `--s3pub`: Publish results to AWS S3. The AWS CLI must be available on the Nextflow host system, and must be configued with necessary permissions to copy files to the destination bucket.
+- `-stub`: Use the stub methods for input data generation. This will use premade data from [`covidestim-sources/example-output`](https://github.com/covidestim/covidestim-sources/tree/master/example-output), and is much faster than invoking `make` to create all input data from scratch. Useful for testing.
 
 ### Examples
 
@@ -129,7 +132,7 @@ There are parameters defined in `main.nf` which can be invoked at runtime in the
 
 Run the county pipeline locally, inserting the results into the database, and
 uploading static files to S3. Available in repository as
-`scripts/runLocal-counties-prod.sh`.
+[`scripts/runLocal-counties-prod.sh`](scripts/runLocal-counties-prod.sh).
 
 ```bash
 #!/usr/bin/env bash
@@ -171,9 +174,9 @@ nextflow run . \
 
 ## FAQ
 
-**How do I change the number of attempts to successfully run a model, and the length of each attempt?**
+**How do I change the number of attempts that will be made to successfully run a model, as well as the length of each attempt?**
 
-Change `nextflow.config` by modifying the `states` and `counties` profiles.
+Change [`nextflow.config`](nextflow.config) by modifying the `states` and `counties` profiles.
 
 **How do I change how Stan is invoked?**
 
