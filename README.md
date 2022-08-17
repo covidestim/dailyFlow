@@ -14,6 +14,14 @@ Nextflow:
 - Produces logs of what happened
 - In certain situations, reruns models when they timeout or fail
 
+## Workflow
+
+### States
+
+![State workflow](/images/states/drawio.png)
+
+### Counties
+
 ## Getting started
 
 ### Configuration
