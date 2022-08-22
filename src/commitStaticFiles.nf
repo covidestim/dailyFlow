@@ -12,6 +12,7 @@ process commitStaticFiles {
     PUBLIC="--acl public-read"
     MSGPACK="--content-type application/x-msgpack"
     CACHE="--cache-control max-age=3600"
+    CLOUDFRONT_DISTRO="E3LRZT05X19VF9"
 
     case !{geo_type} in
       fips)  PRODUCTION="s3://covidestim/latest-v2";;
