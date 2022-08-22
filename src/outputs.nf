@@ -12,9 +12,10 @@ process publishCountyResults {
         file optVals
         file metadata
     output:
-        file 'summary.pack.gz'
-        file 'estimates.csv'
-        file 'estimates.csv.gz'
+        path 'summary.pack.gz',  emit: messagepack
+        path 'estimates.csv',    emit: summary
+        path 'estimates.csv.gz', emit: summary_gzip
+
 
     publishDir "$params.webdir/$params.date", enabled: params.s3pub
     publishDir "$params.webdir/stage",  enabled: params.s3pub, overwrite: true
@@ -48,9 +49,9 @@ process publishStateResults {
         file method
         file metadata
     output:
-        file 'summary.pack.gz'
-        file 'estimates.csv'
-        file 'estimates.csv.gz'
+        path 'summary.pack.gz',  emit: messagepack
+        path 'estimates.csv',    emit: summary
+        path 'estimates.csv.gz', emit: summary_gzip
 
     publishDir "$params.webdir/$params.date/state", enabled: params.s3pub
     publishDir "$params.webdir/stage/state", enabled: params.s3pub, overwrite: true

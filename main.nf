@@ -15,6 +15,7 @@ params.branch       = "latest" // Branch of model to run - must be on Docker Hub
 params.key          = "fips"   // "fips" for county runs, "state" for state runs
 params.raw          = false    // Output raw `covidestim-result` object as .RDS?
 params.s3pub        = false    // Don't upload to S3 by default
+params.s3commit     = false    // Don't make static files available publicly, by default
 params.splicedate   = false    // By default, don't do any custom date splicing
                                //   for state-level runs. This still means that
                                //   CTP data will prefill JHU data.
@@ -119,6 +120,15 @@ main:
 
         publishCountyResults(summary, input, rejects, warning, optvals, metadata)
         insertResults(summary, input, metadata, method)
+
+        if (params.s3commit) {
+            commitStaticFiles(
+              publishCountyResults.out.messagepack,
+              publishCountyResults.out.summary_gzip,
+              params.key
+            )
+        }
+
     } else {
         input   = jhuStateVaxData.out.data
         rejects = jhuStateVaxData.out.rejects
@@ -150,6 +160,14 @@ main:
             makeSyntheticIntervals.out.metadata,
             method
         )
+
+        if (params.s3commit) {
+            commitStaticFiles(
+              publishStateResults.out.messagepack,
+              publishStateResults.out.summary_gzip,
+              params.key
+            )
+        }
 
         final_metadata = collectJSONs(makeSyntheticIntervals.out.metadata, 'final_metadata.json')
     }
