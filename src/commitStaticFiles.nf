@@ -29,6 +29,6 @@ process commitStaticFiles {
     # Invalidate the CDN's existing copies
     aws cloudfront create-invalidation \
       --distribution-id \$CLOUDFRONT_DISTRO \
-      --paths "\$PRODUCTION/summary.pack.gz \$PRODUCTION/estimates.csv"
+      --paths "\$PRODUCTION/summary.pack.gz" "\$PRODUCTION/estimates.csv"
     """
 }
