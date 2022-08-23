@@ -66,8 +66,8 @@ process runTractOptimizer {
             20.seconds * 3300 / (params.ngroups as int)
     }
 
-    errorStrategy "ignore"
-    // maxRetries 1
+    errorStrategy "retry"
+    maxRetries 1
 
     // Files from `splitTractData` are ALWAYS named by the tract they
     // represent, i.e. state name or county FIPS. We can get the name of the
