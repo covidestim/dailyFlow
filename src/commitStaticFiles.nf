@@ -8,6 +8,8 @@ process commitStaticFiles {
 
     shell:
     """
+    #!/bin/bash
+
     GZIP="--content-encoding gzip"
     PUBLIC="--acl public-read"
     MSGPACK="--content-type application/x-msgpack"
