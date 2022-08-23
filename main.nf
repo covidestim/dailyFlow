@@ -28,6 +28,7 @@ include {filterTestTracts; splitTractData} from './src/inputs-utils'
 include {runTractSampler; runTractOptimizer} from './src/modelrunners'
 include {makeSyntheticIntervals} from './src/synthetic-intervals'
 include {publishStateResults; publishCountyResults; insertResults} from './src/outputs'
+include {commitStaticFiles} from './src/commitStaticFiles'
 
 def collectCSVs(chan, fname) {
     chan.collectFile(
