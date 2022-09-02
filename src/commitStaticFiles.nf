@@ -14,6 +14,7 @@ process commitStaticFiles {
     PUBLIC="--acl public-read"
     MSGPACK="--content-type application/x-msgpack"
     CACHE="--cache-control max-age=3600"
+
     S3_BUCKET="s3://covidestim"
     CLOUDFRONT_DISTRO="E3LRZT05X19VF9"
 
@@ -30,6 +31,10 @@ process commitStaticFiles {
     # Invalidate the CDN's existing copies
     aws cloudfront create-invalidation \
       --distribution-id \$CLOUDFRONT_DISTRO \
-      --paths "/\$PRODUCTION_PATH/summary.pack.gz /\$PRODUCTION_PATH/estimates.csv"
+      --paths "/\$PRODUCTION_PATH/summary.pack.gz"
+
+    aws cloudfront create-invalidation \
+      --distribution-id \$CLOUDFRONT_DISTRO \
+      --paths "/\$PRODUCTION_PATH/estimates.csv"
     """
 }
