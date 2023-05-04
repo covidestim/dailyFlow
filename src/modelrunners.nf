@@ -62,8 +62,8 @@ process runTractOptimizer {
 
     time {
         params.ngroups == 10000000 ?
-            20.seconds :
-            20.seconds * 3300 / (params.ngroups as int)
+            40.seconds :
+            40.seconds * 3300 / (params.ngroups as int)
     }
 
     errorStrategy "retry"
